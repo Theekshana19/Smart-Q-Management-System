@@ -18,12 +18,14 @@ export class QueueBoardComponent implements OnInit, OnDestroy {
 
   readonly board = signal<DisplayBoard | null>(null);
   readonly flash = signal(false);
-  now = new Date();
-  private timer?: ReturnType<typeof setInterval>;
+  readonly now = signal(new Date());
+  private clockTimer?: ReturnType<typeof setInterval>;
+  private refreshTimer?: ReturnType<typeof setInterval>;
 
   ngOnInit(): void {
-    this.timer = setInterval(() => (this.now = new Date()), 1000);
+    this.clockTimer = setInterval(() => this.now.set(new Date()), 1000);
     this.loadBoard();
+    this.refreshTimer = setInterval(() => this.loadBoard(), 30_000);
     this.signalr.start().then(() => {
       this.signalr.displayUpdated$.subscribe(b => this.applyBoard(b, false));
       this.signalr.tokenCalled$.subscribe(call => {
@@ -38,7 +40,8 @@ export class QueueBoardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.timer) clearInterval(this.timer);
+    if (this.clockTimer) clearInterval(this.clockTimer);
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
     this.signalr.stop();
   }
 

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SmartQ.Application.DTOs;
 using SmartQ.Application.Interfaces;
 
 namespace SmartQ.API.Controllers;
@@ -23,7 +24,15 @@ public class CountersController : ControllerBase
     public async Task<IActionResult> CallNext(int counterId, CancellationToken ct)
     {
         var result = await _counters.CallNextAsync(counterId, ct: ct);
-        return result == null ? NotFound(new { message = "No waiting tokens." }) : Ok(result);
+        if (result == null)
+        {
+            return Ok(new CallNextResultDto(
+                false,
+                "No waiting tokens for the services assigned to this counter.",
+                null));
+        }
+
+        return Ok(new CallNextResultDto(true, "Token called successfully.", result));
     }
 
     [HttpGet("{counterId:int}/console-summary")]

@@ -173,7 +173,8 @@ public static class SeedData
             new CounterServiceAssignment { Id = 2, CounterId = 2, ServiceId = 1, IsActive = true },
             new CounterServiceAssignment { Id = 3, CounterId = 3, ServiceId = 1, IsActive = true },
             new CounterServiceAssignment { Id = 4, CounterId = 4, ServiceId = 4, IsActive = true },
-            new CounterServiceAssignment { Id = 5, CounterId = 5, ServiceId = 3, IsActive = true }
+            new CounterServiceAssignment { Id = 5, CounterId = 5, ServiceId = 3, IsActive = true },
+            new CounterServiceAssignment { Id = 6, CounterId = 1, ServiceId = 5, IsActive = true }
         );
     }
 

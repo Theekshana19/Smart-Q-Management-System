@@ -9,7 +9,11 @@
     </nav>
     <div class="officer">
       <strong>Officer Sarah</strong>
-      <small>Counter 02 - Active</small>
+      @if (summary(); as s) {
+        <small>{{ s.queue.counterName }} — Active</small>
+      } @else {
+        <small>Loading counter…</small>
+      }
       <button class="logout">Logout</button>
     </div>
   </aside>
@@ -17,13 +21,26 @@
   <div class="main">
     <header class="top">
       <h1>Service Console</h1>
-      <input placeholder="Search tokens..." />
+      <select
+        class="counter-select"
+        [ngModel]="counterId()"
+        (ngModelChange)="onCounterSelect($event)"
+        [disabled]="!counters().length">
+        @for (c of counters(); track c.id) {
+          <option [ngValue]="c.id">{{ c.counterName }} ({{ c.counterNo }})</option>
+        }
+      </select>
       <span class="material-symbols-outlined">notifications</span>
       <span class="material-symbols-outlined">settings</span>
     </header>
 
     @if (loading()) { <p class="loading">Loading...</p> }
     @else if (summary(); as s) {
+      <p class="assigned-banner">
+        <strong>{{ s.queue.counterName }} serves:</strong>
+        {{ s.queue.assignedServiceNames.length ? s.queue.assignedServiceNames.join(', ') : 'No services assigned' }}
+        <span class="hint"> — Call Next only picks tokens for these services. TV display shows every waiting customer in the branch.</span>
+      </p>
       <div class="stats">
         <div class="stat-card"><span class="material-symbols-outlined">hourglass_empty</span><div><small>Waiting</small><strong>{{ s.waitingCount }}</strong></div></div>
         <div class="stat-card"><span class="material-symbols-outlined">check_circle</span><div><small>Served Today</small><strong>{{ s.servedToday }}</strong></div></div>
@@ -67,18 +84,31 @@
         <table>
           <thead><tr><th>TOKEN NO</th><th>SERVICE TYPE</th><th>WAIT TIME</th><th>PRIORITY</th></tr></thead>
           <tbody>
-            @for (t of s.queue.waitingTokens; track t.id) {
+            @if (s.queue.waitingTokens.length === 0) {
               <tr>
-                <td>{{ t.tokenNo }}</td>
-                <td>{{ t.subServiceName }}</td>
-                <td>{{ t.waitMinutes }} min</td>
-                <td><span class="pill" [class.vip]="t.priority === 'VIP'">{{ t.priority }}</span></td>
+                <td colspan="4" class="empty-queue">
+                  No tokens waiting for this counter's services.
+                  @if (s.waitingCount === 0) {
+                    Create a kiosk token under {{ s.queue.assignedServiceNames.join(' or ') }} to test Call Next.
+                  }
+                </td>
               </tr>
+            } @else {
+              @for (t of s.queue.waitingTokens; track t.id) {
+                <tr>
+                  <td>{{ t.tokenNo }}</td>
+                  <td>{{ t.subServiceName }}</td>
+                  <td>{{ t.waitMinutes }} min</td>
+                  <td><span class="pill" [class.vip]="t.priority === 'VIP'">{{ t.priority }}</span></td>
+                </tr>
+              }
             }
           </tbody>
         </table>
       </div>
-      @if (actionMsg()) { <p class="action-msg">{{ actionMsg() }}</p> }
+      @if (actionMsg()) {
+        <p class="action-msg" [class.warn]="!actionMsg().startsWith('Called')">{{ actionMsg() }}</p>
+      }
     }
   </div>
 </div>

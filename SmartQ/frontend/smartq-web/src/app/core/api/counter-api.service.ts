@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { CallNextResponse, CounterQueue, StaffConsoleSummary } from '../models';
+import { CallNextResult, CounterQueue, StaffConsoleSummary } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class CounterApiService {
@@ -17,7 +17,7 @@ export class CounterApiService {
   }
 
   callNext(counterId: number) {
-    return this.http.post<CallNextResponse>(`${this.base}/${counterId}/call-next`, {});
+    return this.http.post<CallNextResult>(`${this.base}/${counterId}/call-next`, {});
   }
 
   getConsoleSummary(counterId: number) {

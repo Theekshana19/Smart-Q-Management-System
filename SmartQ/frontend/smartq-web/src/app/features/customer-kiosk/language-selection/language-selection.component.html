@@ -3,18 +3,25 @@
   <header class="kiosk-header">
     <div class="brand">
       <span class="material-symbols-outlined logo-icon">layers</span>
-      <span class="brand-text">SmartQ</span>
+      <span class="brand-text">SmartQ Sri Lanka</span>
     </div>
     <div class="clock">
       <span class="material-symbols-outlined">schedule</span>
-      {{ now | date:'hh:mm a' }}
+      <time>{{ now() | date:'hh:mm:ss a' }}</time>
     </div>
   </header>
 
   <main class="content">
     <div class="hero-text">
-      <h1>Welcome to SmartQ Bank</h1>
-      <p class="subtitle">Please select your language to begin</p>
+      <div class="hero-message" [class.show]="textVisible()" aria-live="polite">
+        <h1>{{ currentSlide().title }}</h1>
+        <p class="subtitle">{{ currentSlide().subtitle }}</p>
+      </div>
+      <div class="lang-dots" aria-hidden="true">
+        @for (slide of welcomeSlides; track slide.code; let i = $index) {
+          <span class="dot" [class.active]="slideIndex() === i"></span>
+        }
+      </div>
     </div>
 
     <!-- 30% secondary: white card zone -->
@@ -42,7 +49,9 @@
   <!-- 10% accent: muted blue instruction + step indicator -->
   <footer class="kiosk-footer">
     <span class="material-symbols-outlined touch-icon">touch_app</span>
-    <span>TOUCH YOUR PREFERRED LANGUAGE TO CONTINUE</span>
+    <span class="footer-message" [class.show]="textVisible()" aria-live="polite">
+      {{ currentSlide().footer }}
+    </span>
     <div class="steps"><span class="active"></span><span></span><span></span></div>
   </footer>
 </div>

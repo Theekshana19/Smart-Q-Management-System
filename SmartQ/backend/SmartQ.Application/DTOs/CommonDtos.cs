@@ -32,12 +32,15 @@ public record QueueTokenDto(
 
 public record CounterQueueDto(
     int CounterId, string CounterName, string CounterStatus,
+    IReadOnlyList<string> AssignedServiceNames,
     TokenDetailDto? ActiveToken, TokenDetailDto? NextToken,
     IReadOnlyList<QueueTokenDto> WaitingTokens);
 
 public record CallNextResponse(
     int TokenId, string TokenNo, string ServiceName, string SubServiceName,
     string CounterName, string CounterNo);
+
+public record CallNextResultDto(bool Success, string Message, CallNextResponse? Data);
 
 public record StaffConsoleSummaryDto(
     int WaitingCount, int ServedToday, int AvgWaitMinutes,

@@ -115,9 +115,16 @@ export interface CounterQueue {
   counterId: number;
   counterName: string;
   counterStatus: string;
+  assignedServiceNames: string[];
   activeToken: TokenDetail | null;
   nextToken: TokenDetail | null;
   waitingTokens: QueueToken[];
+}
+
+export interface CallNextResult {
+  success: boolean;
+  message: string;
+  data: CallNextResponse | null;
 }
 
 export interface QueueToken {

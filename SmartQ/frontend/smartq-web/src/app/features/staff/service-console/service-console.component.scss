@@ -15,8 +15,17 @@
 .top {
   display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;
   h1 { flex: 1; color: var(--primary); }
-  input { flex: 2; max-width: 400px; padding: 0.6rem 1rem; border-radius: 999px; border: 1px solid var(--outline); }
+  .counter-select {
+    padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--outline);
+    font-weight: 600; color: var(--primary); min-width: 180px;
+  }
 }
+.assigned-banner {
+  background: #e8f0fe; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem;
+  font-size: 0.9rem; color: var(--primary);
+  .hint { color: var(--muted); font-weight: 400; }
+}
+.empty-queue { text-align: center; color: var(--muted); padding: 2rem !important; }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
 .stat-card {
   background: #fff; border-radius: var(--radius); padding: 1.25rem; display: flex; gap: 1rem; align-items: center;
@@ -50,4 +59,7 @@
   table { width: 100%; border-collapse: collapse; th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--outline); font-size: 0.9rem; } th { color: var(--muted); font-size: 0.75rem; } }
   .pill { background: #e3f2fd; color: var(--primary); padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; &.vip { background: #ffebee; color: var(--error); } }
 }
-.action-msg { margin-top: 1rem; color: var(--success); font-weight: 600; }
+.action-msg {
+  margin-top: 1rem; color: var(--success); font-weight: 600;
+  &.warn { color: #b45309; }
+}

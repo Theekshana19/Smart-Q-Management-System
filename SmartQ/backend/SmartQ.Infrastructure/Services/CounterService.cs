@@ -27,16 +27,27 @@ public class CounterService : ICounterService
             .ToListAsync(ct);
     }
 
+    private async Task<List<int>> GetAssignedServiceIdsAsync(int counterId, CancellationToken ct) =>
+        await _db.CounterServiceAssignments.AsNoTracking()
+            .Where(a => a.CounterId == counterId && a.IsActive)
+            .Select(a => a.ServiceId)
+            .ToListAsync(ct);
+
+    private async Task<List<string>> GetAssignedServiceNamesAsync(int counterId, CancellationToken ct) =>
+        await _db.CounterServiceAssignments.AsNoTracking()
+            .Where(a => a.CounterId == counterId && a.IsActive)
+            .OrderBy(a => a.Service.DisplayOrder)
+            .Select(a => a.Service.Name)
+            .ToListAsync(ct);
+
     public async Task<CounterQueueDto> GetCounterQueueAsync(int counterId, CancellationToken ct = default)
     {
         var counter = await _db.Counters.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == counterId, ct)
             ?? throw new InvalidOperationException("Counter not found.");
 
-        var serviceIds = await _db.CounterServiceAssignments.AsNoTracking()
-            .Where(a => a.CounterId == counterId && a.IsActive)
-            .Select(a => a.ServiceId)
-            .ToListAsync(ct);
+        var serviceIds = await GetAssignedServiceIdsAsync(counterId, ct);
+        var assignedNames = await GetAssignedServiceNamesAsync(counterId, ct);
 
         var priorityEnabled = await GetSettingBoolAsync("ENABLE_PRIORITY_QUEUE", true, ct);
 
@@ -63,6 +74,7 @@ public class CounterService : ICounterService
 
         return new CounterQueueDto(
             counter.Id, counter.CounterName, counter.Status.ToString(),
+            assignedNames,
             active != null ? MapDetail(active) : null,
             next != null ? MapDetail(next) : null,
             waiting.Select(MapQueue).ToList());
@@ -77,10 +89,7 @@ public class CounterService : ICounterService
                 .FirstOrDefaultAsync(c => c.Id == counterId && c.IsActive, ct)
                 ?? throw new InvalidOperationException("Counter not found.");
 
-            var serviceIds = await _db.CounterServiceAssignments
-                .Where(a => a.CounterId == counterId && a.IsActive)
-                .Select(a => a.ServiceId)
-                .ToListAsync(ct);
+            var serviceIds = await GetAssignedServiceIdsAsync(counterId, ct);
 
             if (serviceIds.Count == 0)
                 throw new InvalidOperationException("No services assigned to counter.");
@@ -142,17 +151,24 @@ public class CounterService : ICounterService
     public async Task<StaffConsoleSummaryDto> GetStaffConsoleSummaryAsync(int counterId, CancellationToken ct = default)
     {
         var today = DateTime.Today;
-        var waiting = await _db.Tokens.AsNoTracking()
-            .CountAsync(t => t.Status == TokenStatus.WAITING, ct);
+        var serviceIds = await GetAssignedServiceIdsAsync(counterId, ct);
+
+        var waitingQuery = _db.Tokens.AsNoTracking()
+            .Where(t => t.Status == TokenStatus.WAITING);
+        if (serviceIds.Count > 0)
+            waitingQuery = waitingQuery.Where(t => serviceIds.Contains(t.ServiceId));
+
+        var waiting = await waitingQuery.CountAsync(ct);
+
         var served = await _db.Tokens.AsNoTracking()
             .CountAsync(t => t.CounterId == counterId && t.CompletedAt >= today, ct);
-        var avgWait = await _db.Tokens.AsNoTracking()
-            .Where(t => t.Status == TokenStatus.WAITING)
+
+        var avgWait = await waitingQuery
             .Select(t => (int?)t.EstimatedWaitMinutes)
             .AverageAsync(ct) ?? 0;
 
         var queue = await GetCounterQueueAsync(counterId, ct);
-        return new StaffConsoleSummaryDto((int)waiting, served, (int)avgWait, queue);
+        return new StaffConsoleSummaryDto(waiting, served, (int)avgWait, queue);
     }
 
     private static TokenDetailDto MapDetail(Token t) => new(
