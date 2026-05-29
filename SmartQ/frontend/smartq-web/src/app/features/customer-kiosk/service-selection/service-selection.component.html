@@ -1,0 +1,46 @@
+<div class="page">
+  <header class="top-bar">
+    <div class="brand">
+      <span class="material-symbols-outlined">layers</span>
+      <strong>SmartQ</strong>
+    </div>
+    <div class="meta">
+      <span class="lang-pill"><span class="material-symbols-outlined">language</span> {{ langCode }}</span>
+      <span class="time"><span class="material-symbols-outlined">schedule</span> {{ now | date:'HH:mm:ss' }}</span>
+    </div>
+  </header>
+
+  <main class="main">
+    <h1>{{ labels.selectServiceTitle }}</h1>
+    <p class="sub">{{ labels.selectServiceSub }}</p>
+
+    @if (loading()) { <p class="loading">{{ labels.loading }}</p> }
+    @else if (error()) { <p class="error-msg">{{ error() }}</p> }
+    @else {
+      <div class="grid">
+        @for (s of services(); track s.id) {
+          <button class="service-card" (click)="selectService(s)">
+            <div class="icon-box"><span class="material-symbols-outlined">{{ s.icon }}</span></div>
+            <h3>{{ s.name }}</h3>
+            <p>{{ s.description }}</p>
+            <span class="arrow material-symbols-outlined">arrow_forward</span>
+          </button>
+        }
+        <div class="live-card">
+          <div class="live-head">
+            <span class="material-symbols-outlined">info</span>
+            <span class="badge">{{ labels.liveStatus }}</span>
+          </div>
+          <h3>{{ labels.waitTimes }}</h3>
+          <p>{{ labels.waitTimesDesc }}</p>
+          <div class="staff-row"><span>{{ labels.staffActive }}</span></div>
+        </div>
+      </div>
+    }
+  </main>
+
+  <footer class="foot">
+    <a routerLink="/customer/language" class="btn-back"><span class="material-symbols-outlined">arrow_back</span> {{ labels.back }}</a>
+    <a routerLink="/customer/language" class="btn-home"><span class="material-symbols-outlined">home</span> {{ labels.home }}</a>
+  </footer>
+</div>

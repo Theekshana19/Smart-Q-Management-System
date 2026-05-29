@@ -1,0 +1,24 @@
+@use '../service-selection/service-selection.component.scss';
+
+.nav-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 2.5rem; color: var(--muted);
+  .back-link { display: flex; align-items: center; gap: 0.35rem; color: var(--primary); font-weight: 600; border: 1px solid var(--outline); padding: 0.5rem 1rem; border-radius: 8px; }
+}
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; max-width: 1100px; }
+.sub-card {
+  background: #fff; border-radius: var(--radius); padding: 1.5rem; text-align: left;
+  border: 2px solid transparent; box-shadow: var(--shadow); transition: all 0.2s;
+  .top { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+  .icon-box { width: 48px; height: 48px; background: var(--secondary-container); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary); }
+  .queue-info { text-align: right; font-size: 0.8rem; color: var(--muted); display: flex; flex-direction: column; gap: 0.25rem; }
+  h3 { color: var(--primary); margin-bottom: 0.5rem; }
+  p { color: var(--muted); font-size: 0.9rem; }
+  &:hover:not(:disabled) { transform: translateY(-4px); border-color: var(--primary); }
+  &:disabled { opacity: 0.6; }
+}
+.status-bar {
+  display: flex; justify-content: space-between; padding: 1rem 2.5rem;
+  background: #fff; border-top: 1px solid var(--outline); font-size: 0.8rem; color: var(--muted);
+  .online { color: var(--success); font-size: 1rem; vertical-align: middle; }
+}

@@ -1,0 +1,84 @@
+<div class="console-layout">
+  <aside class="sidebar">
+    <div class="logo"><span class="material-symbols-outlined">layers</span> SmartQ</div>
+    <nav>
+      <a class="nav-item">Dashboard</a>
+      <a class="nav-item active">Queue</a>
+      <a class="nav-item">Staff</a>
+      <a class="nav-item">Reports</a>
+    </nav>
+    <div class="officer">
+      <strong>Officer Sarah</strong>
+      <small>Counter 02 - Active</small>
+      <button class="logout">Logout</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <h1>Service Console</h1>
+      <input placeholder="Search tokens..." />
+      <span class="material-symbols-outlined">notifications</span>
+      <span class="material-symbols-outlined">settings</span>
+    </header>
+
+    @if (loading()) { <p class="loading">Loading...</p> }
+    @else if (summary(); as s) {
+      <div class="stats">
+        <div class="stat-card"><span class="material-symbols-outlined">hourglass_empty</span><div><small>Waiting</small><strong>{{ s.waitingCount }}</strong></div></div>
+        <div class="stat-card"><span class="material-symbols-outlined">check_circle</span><div><small>Served Today</small><strong>{{ s.servedToday }}</strong></div></div>
+        <div class="stat-card"><span class="material-symbols-outlined">timer</span><div><small>Avg. Wait Time</small><strong>{{ s.avgWaitMinutes }} min</strong></div></div>
+      </div>
+
+      <div class="workspace">
+        <div class="active-session card">
+          <div class="session-head">ACTIVE SESSION <span class="badge">IN PROGRESS</span></div>
+          @if (s.queue.activeToken; as active) {
+            <div class="token-big">{{ active.tokenNo }}</div>
+            <p>{{ active.subServiceName }}</p>
+            <div class="ctrl-btns">
+              <button (click)="recall()">RECALL</button>
+              <button (click)="skip()">SKIP</button>
+            </div>
+            <div class="main-actions">
+              <button class="danger" (click)="skip()">No Show</button>
+              <button class="btn-primary" (click)="complete()">Complete Service</button>
+            </div>
+          } @else {
+            <p class="empty">No active session</p>
+          }
+        </div>
+
+        <div class="queue-control card">
+          <span class="label">QUEUE CONTROL</span>
+          <button class="call-next" (click)="callNext()">
+            <span class="material-symbols-outlined">play_circle</span>
+            Call Next
+          </button>
+          @if (s.queue.nextToken; as next) {
+            <p>Next in line: <strong>{{ next.tokenNo }}</strong></p>
+            <p class="hint">{{ next.subServiceName }}</p>
+          }
+        </div>
+      </div>
+
+      <div class="queue-table card">
+        <div class="table-head">Live Queue List <span class="filter active">My Services</span></div>
+        <table>
+          <thead><tr><th>TOKEN NO</th><th>SERVICE TYPE</th><th>WAIT TIME</th><th>PRIORITY</th></tr></thead>
+          <tbody>
+            @for (t of s.queue.waitingTokens; track t.id) {
+              <tr>
+                <td>{{ t.tokenNo }}</td>
+                <td>{{ t.subServiceName }}</td>
+                <td>{{ t.waitMinutes }} min</td>
+                <td><span class="pill" [class.vip]="t.priority === 'VIP'">{{ t.priority }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (actionMsg()) { <p class="action-msg">{{ actionMsg() }}</p> }
+    }
+  </div>
+</div>

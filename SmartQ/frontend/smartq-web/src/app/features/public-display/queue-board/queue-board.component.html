@@ -1,0 +1,63 @@
+<div class="display-page">
+  <header class="display-header">
+    <div class="brand">
+      <span class="material-symbols-outlined">layers</span>
+      <h1>SmartQ Bank Queue Display</h1>
+    </div>
+    <div class="meta">
+      <span><span class="material-symbols-outlined">schedule</span> {{ now | date:'HH:mm' }}</span>
+      <span><span class="material-symbols-outlined">language</span> EN | SI | TA</span>
+    </div>
+  </header>
+
+  @if (board(); as b) {
+    <main class="display-main">
+      <section class="primary">
+        <div class="now-serving" [class.flash]="flash()">
+          <span class="label"><span class="material-symbols-outlined">campaign</span> NOW SERVING</span>
+          <span class="token">{{ b.nowServing?.tokenNo ?? '---' }}</span>
+          <span class="counter-pill">{{ b.nowServing?.counterName ?? 'Please Wait' }}</span>
+        </div>
+        <div class="recent-grid">
+          @for (r of b.recentlyCalled; track r.tokenNo) {
+            <div class="recent-card">
+              <span class="label">RECENTLY CALLED</span>
+              <span class="token-sm">{{ r.tokenNo }}</span>
+              <span class="counter">{{ r.counterName }}</span>
+            </div>
+          }
+        </div>
+      </section>
+      <aside class="sidebar">
+        <div class="wait-head">
+          <span class="material-symbols-outlined">groups</span>
+          <div>
+            <h2>Waiting Queue</h2>
+            <p>Expected Wait: ~{{ b.waitingQueue.expectedWaitMinutes }} mins</p>
+          </div>
+        </div>
+        <div class="wait-list">
+          @for (item of b.waitingQueue.items; track item.tokenNo) {
+            <div class="wait-item">
+              <span class="tok">{{ item.tokenNo }}</span>
+              <span class="svc">{{ item.subServiceName }}</span>
+            </div>
+          }
+        </div>
+        <div class="promo">
+          <strong>SMART MOBILE BANKING</strong>
+          <p>Scan QR on your receipt to track your turn live.</p>
+        </div>
+      </aside>
+    </main>
+    <footer class="ticker">
+      <div class="ticker-inner">
+        @for (msg of b.tickerMessages; track msg) {
+          <span>{{ msg }}</span><span class="material-symbols-outlined">star</span>
+        }
+      </div>
+    </footer>
+  } @else {
+    <p class="loading">Connecting to queue display...</p>
+  }
+</div>

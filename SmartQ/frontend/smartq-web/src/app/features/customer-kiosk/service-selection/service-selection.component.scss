@@ -1,0 +1,44 @@
+.page { min-height: 100vh; background: var(--bg); display: flex; flex-direction: column; }
+.top-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.25rem 2.5rem; background: #fff; border-bottom: 1px solid var(--outline);
+  .brand { display: flex; align-items: center; gap: 0.5rem; color: var(--primary); font-size: 1.25rem; }
+  .meta { display: flex; gap: 1.5rem; align-items: center; color: var(--muted); }
+  .lang-pill, .time { display: flex; align-items: center; gap: 0.35rem; }
+}
+.main { flex: 1; padding: 2.5rem 3rem; h1 { font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; } .sub { color: var(--muted); margin-bottom: 2rem; } }
+.grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+  @media (max-width: 1100px) { grid-template-columns: repeat(2, 1fr); }
+}
+.service-card {
+  background: #fff; border-radius: var(--radius); padding: 1.5rem;
+  text-align: left; position: relative; border: 2px solid transparent;
+  box-shadow: var(--shadow); transition: all 0.2s;
+  .icon-box {
+    width: 48px; height: 48px; background: var(--secondary-container);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    color: var(--primary); margin-bottom: 1rem;
+  }
+  h3 { color: var(--primary); margin-bottom: 0.5rem; }
+  p { color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+  .arrow { position: absolute; bottom: 1rem; right: 1rem; color: var(--primary); }
+  &:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 8px 32px rgba(0,52,111,0.15); }
+}
+.live-card {
+  background: var(--primary); color: #fff; border-radius: var(--radius); padding: 1.5rem;
+  .live-head { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+  .badge { background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; }
+  h3 { font-size: 1.5rem; margin: 1rem 0; }
+  p { opacity: 0.9; font-size: 0.9rem; line-height: 1.5; }
+  .staff-row { margin-top: 1.5rem; font-size: 0.875rem; }
+}
+.foot {
+  display: flex; justify-content: space-between; padding: 1.5rem 2.5rem;
+  .btn-back, .btn-home {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.75rem 1.5rem; border-radius: var(--radius); font-weight: 600;
+  }
+  .btn-back { background: #e8ecf2; color: var(--muted); }
+  .btn-home { background: var(--primary); color: #fff; }
+}

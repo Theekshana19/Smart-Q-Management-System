@@ -1,0 +1,45 @@
+<div class="page">
+  <header class="top-bar">
+    <div class="brand"><span class="material-symbols-outlined">layers</span><strong>SmartQ</strong></div>
+    <div class="meta">
+      <span class="lang-pill"><span class="material-symbols-outlined">language</span> {{ langCode }}</span>
+      <span class="time"><span class="material-symbols-outlined">schedule</span> {{ now | date:'hh:mm a' }}</span>
+    </div>
+  </header>
+
+  <div class="nav-row">
+    <nav class="breadcrumb">{{ labels.homeCrumb }} &gt; {{ serviceName }}</nav>
+    <a routerLink="/customer/services" class="back-link"><span class="material-symbols-outlined">arrow_back</span> {{ labels.backToMainServices }}</a>
+  </div>
+
+  <main class="main">
+    <h1>{{ pageTitle }}</h1>
+    <p class="sub">{{ labels.selectSubSub }}</p>
+    @if (error()) { <p class="error-msg">{{ error() }}</p> }
+    @if (generating()) { <p class="loading">{{ labels.generatingToken }}</p> }
+    @if (loading()) { <p class="loading">{{ labels.loading }}</p> }
+    @else {
+      <div class="grid">
+        @for (sub of subServices(); track sub.id) {
+          <button class="sub-card" (click)="selectSub(sub)" [disabled]="generating()">
+            <div class="top">
+              <div class="icon-box"><span class="material-symbols-outlined">{{ sub.icon }}</span></div>
+              <div class="queue-info">
+                <span><span class="material-symbols-outlined">schedule</span> {{ sub.estimatedWaitMinutes }} {{ labels.mins }}</span>
+                <span>{{ sub.waitingCount }} {{ labels.customersWaiting }}</span>
+              </div>
+            </div>
+            <h3>{{ sub.name }} ({{ sub.tokenPrefix }})</h3>
+            <p>{{ sub.description }}</p>
+          </button>
+        }
+      </div>
+    }
+  </main>
+
+  <footer class="status-bar">
+    <span>{{ labels.digitalKiosk }} {{ kioskStatus()?.kioskVersion ?? 'v2.4' }}</span>
+    <span><span class="material-symbols-outlined online">check_circle</span> {{ labels.systemOnline }}</span>
+    <span>{{ labels.branchIdLabel }}: {{ kioskStatus()?.branchId ?? 'BR-9904' }}</span>
+  </footer>
+</div>

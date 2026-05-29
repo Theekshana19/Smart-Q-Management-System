@@ -1,0 +1,27 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Dashboard Overview</h1>
+      <p>Real-time operational health and customer flow analysis.</p>
+    </div>
+    <div class="actions">
+      <button class="btn-filter">Last 24 Hours</button>
+      <button class="btn-export">Export Report</button>
+    </div>
+  </div>
+
+  @if (data(); as d) {
+    <div class="kpi-grid">
+      <div class="kpi card"><span>Active Tokens</span><strong>{{ d['activeTokens'] }}</strong></div>
+      <div class="kpi card"><span>Avg. Wait Time</span><strong>{{ d['avgWaitMinutes'] }}m</strong></div>
+      <div class="kpi card"><span>Staff Online</span><strong>{{ d['staffOnline'] }}/{{ d['staffTotal'] }}</strong></div>
+      <div class="kpi card dark"><span>Satisfaction Rate</span><strong>4.9/5.0</strong></div>
+    </div>
+    <div class="charts">
+      <div class="card chart-placeholder">Hourly Customer Flow (from API)</div>
+      <div class="card chart-placeholder">Token Distribution (from API)</div>
+    </div>
+  } @else {
+    <p class="loading">Loading dashboard...</p>
+  }
+</div>

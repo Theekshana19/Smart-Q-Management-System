@@ -1,0 +1,48 @@
+<div class="kiosk-page">
+  <!-- 60% dominant: navy brand shell -->
+  <header class="kiosk-header">
+    <div class="brand">
+      <span class="material-symbols-outlined logo-icon">layers</span>
+      <span class="brand-text">SmartQ</span>
+    </div>
+    <div class="clock">
+      <span class="material-symbols-outlined">schedule</span>
+      {{ now | date:'hh:mm a' }}
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="hero-text">
+      <h1>Welcome to SmartQ Bank</h1>
+      <p class="subtitle">Please select your language to begin</p>
+    </div>
+
+    <!-- 30% secondary: white card zone -->
+    <div class="card-zone">
+      @if (loading()) {
+        <p class="zone-loading">Loading languages...</p>
+      } @else if (error()) {
+        <p class="zone-error">{{ error() }}</p>
+        <p class="zone-hint">Ensure the API is running (check environment.ts port matches Visual Studio)</p>
+      } @else {
+        <div class="lang-grid">
+          @for (lang of languages(); track lang.id) {
+            <button class="lang-card" (click)="selectLanguage(lang)">
+              <div class="globe-wrap">
+                <span class="material-symbols-outlined">language</span>
+              </div>
+              <span class="lang-name">{{ lang.nativeName }}</span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </main>
+
+  <!-- 10% accent: muted blue instruction + step indicator -->
+  <footer class="kiosk-footer">
+    <span class="material-symbols-outlined touch-icon">touch_app</span>
+    <span>TOUCH YOUR PREFERRED LANGUAGE TO CONTINUE</span>
+    <div class="steps"><span class="active"></span><span></span><span></span></div>
+  </footer>
+</div>

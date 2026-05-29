@@ -1,0 +1,37 @@
+.success-page { min-height: 100vh; background: var(--bg); position: relative; }
+.top-bar {
+  display: flex; justify-content: space-between; padding: 1.5rem 2.5rem;
+  .brand { display: flex; gap: 0.5rem; color: var(--primary); align-items: center; }
+  .branch { text-align: right; strong { display: block; color: var(--primary); } small { color: var(--muted); } }
+}
+.layout {
+  display: grid; grid-template-columns: 1fr 320px; gap: 2rem; padding: 2rem 2.5rem; max-width: 1200px; margin: 0 auto;
+}
+.check-circle {
+  width: 64px; height: 64px; background: #e8f5e9; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; color: var(--success); margin-bottom: 1rem;
+  .material-symbols-outlined { font-size: 2rem; }
+}
+.left h1 { color: var(--primary); margin-bottom: 0.5rem; }
+.left .sub, .left p { color: var(--muted); margin-bottom: 1.5rem; }
+.token-card {
+  background: #fff; border-radius: var(--radius); padding: 2rem; margin: 1.5rem 0;
+  box-shadow: var(--shadow); text-align: center;
+  .label { font-size: 0.75rem; letter-spacing: 0.15em; color: var(--muted); }
+  .token-num { display: block; font-size: 3.5rem; font-weight: 800; color: var(--primary); margin-top: 0.5rem; }
+}
+.details { list-style: none; margin: 1rem 0; li { margin: 0.5rem 0; } }
+.info-box { background: var(--secondary-container); padding: 1rem; border-radius: 8px; font-size: 0.9rem; color: var(--primary); }
+.receipt {
+  background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 1.5rem; font-family: monospace; font-size: 0.85rem;
+  .receipt-inner { border: 1px dashed var(--outline); padding: 1.5rem; text-align: center; }
+  h2 { font-size: 1rem; margin-bottom: 0.25rem; }
+  hr { border: none; border-top: 1px dashed #ccc; margin: 1rem 0; }
+  .r-label { font-size: 0.7rem; letter-spacing: 0.1em; }
+  .r-token { font-size: 2rem; font-weight: 800; margin: 0.5rem 0; }
+  .qr-placeholder { margin: 1rem auto; width: 80px; height: 80px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
+}
+.actions {
+  position: fixed; bottom: 2rem; right: 2rem; display: flex; flex-direction: column; gap: 1rem;
+}

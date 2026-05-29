@@ -1,0 +1,30 @@
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <strong>SmartQ</strong>
+      <small>ENTERPRISE SUITE</small>
+    </div>
+    <nav>
+      <a routerLink="/admin/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/staff/console">Queue Management</a>
+      <a routerLink="/admin/counters" routerLinkActive="active">Staff Directory</a>
+      <a routerLink="/admin/services" routerLinkActive="active">Service Settings</a>
+      <a routerLink="/admin/reports" routerLinkActive="active">Live Analytics</a>
+    </nav>
+    <div class="bottom">
+      <a>Staff Profile</a>
+      <a class="sign-out">Sign Out</a>
+    </div>
+  </aside>
+  <div class="content">
+    <header class="admin-header">
+      <input placeholder="Search analytics or staff..." />
+      <div class="icons">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="material-symbols-outlined">settings</span>
+      </div>
+      <div class="user"><strong>Alex Chen</strong><small>Admin Level 4</small></div>
+    </header>
+    <router-outlet />
+  </div>
+</div>

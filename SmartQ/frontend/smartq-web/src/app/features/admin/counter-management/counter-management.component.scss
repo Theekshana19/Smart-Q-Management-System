@@ -1,0 +1,8 @@
+.page { padding: 1.5rem 2rem; h1 { color: var(--primary); margin-bottom: 1.5rem; } }
+.counter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+.counter-card {
+  padding: 1.25rem;
+  .status { display: inline-block; margin: 0.5rem 0; padding: 0.2rem 0.6rem; background: #e8f5e9; color: var(--success); border-radius: 4px; font-size: 0.8rem; }
+  ul { margin-top: 0.5rem; padding-left: 1.25rem; font-size: 0.85rem; color: var(--muted); }
+  &.add { display: flex; align-items: center; justify-content: center; min-height: 160px; color: var(--primary); font-weight: 700; border: 2px dashed var(--outline); background: transparent; }
+}

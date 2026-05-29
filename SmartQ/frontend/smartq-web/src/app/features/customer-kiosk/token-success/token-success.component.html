@@ -1,0 +1,51 @@
+@if (loading()) {
+  <p class="loading">{{ labels?.loading ?? 'Loading...' }}</p>
+} @else if (token(); as t) {
+  <div class="success-page">
+    <header class="top-bar">
+      <div class="brand"><span class="material-symbols-outlined">layers</span><strong>SmartQ</strong></div>
+      <div class="branch">
+        <strong>{{ kioskStatus()?.branchName ?? labels.smartqBank }}</strong>
+        <small>{{ kioskStatus()?.branchId ?? labels.branchNum }}</small>
+      </div>
+    </header>
+
+    <div class="layout">
+      <section class="left">
+        <div class="check-circle"><span class="material-symbols-outlined">check</span></div>
+        <h1>{{ labels.tokenReady }}</h1>
+        <p>{{ labels.tokenReadySub }}</p>
+        <div class="token-card">
+          <span class="label">{{ labels.tokenNumber }}</span>
+          <span class="token-num">{{ t.tokenNo }}</span>
+        </div>
+        <ul class="details">
+          <li><strong>{{ labels.serviceLabel }}:</strong> {{ t.subServiceName }}</li>
+          <li><strong>{{ labels.estWait }}:</strong> {{ t.estimatedWaitMinutes }} {{ labels.mins }}</li>
+        </ul>
+        <div class="info-box">{{ labels.receiptHold }}</div>
+      </section>
+
+      <section class="receipt print-area">
+        <div class="receipt-inner">
+          <h2>{{ labels.smartqBank }}</h2>
+          <p>{{ labels.centralDistrict }}</p>
+          <p>{{ labels.branchNum }}</p>
+          <hr />
+          <p class="r-label">{{ labels.tokenNoLabel }}</p>
+          <p class="r-token">{{ t.tokenNo }}</p>
+          <p>{{ labels.serviceLabel }}: {{ t.subServiceName }}</p>
+          <p>{{ labels.counterPending }}</p>
+          <p>{{ labels.issued }}: {{ t.createdAt | date:'dd MMM yyyy | HH:mm' }}</p>
+          <div class="qr-placeholder"><span class="material-symbols-outlined">qr_code_2</span></div>
+          <p class="qr-text">{{ labels.scanQr }}</p>
+        </div>
+      </section>
+    </div>
+
+    <div class="actions no-print">
+      <button class="btn-primary" (click)="print()"><span class="material-symbols-outlined">print</span> {{ labels.printToken }}</button>
+      <button class="btn-outline" (click)="finish()"><span class="material-symbols-outlined">check_circle</span> {{ labels.finish }}</button>
+    </div>
+  </div>
+}

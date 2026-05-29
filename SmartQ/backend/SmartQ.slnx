@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SmartQ.API/SmartQ.API.csproj" />
+  <Project Path="SmartQ.Application/SmartQ.Application.csproj" />
+  <Project Path="SmartQ.Domain/SmartQ.Domain.csproj" />
+  <Project Path="SmartQ.Infrastructure/SmartQ.Infrastructure.csproj" />
+</Solution>

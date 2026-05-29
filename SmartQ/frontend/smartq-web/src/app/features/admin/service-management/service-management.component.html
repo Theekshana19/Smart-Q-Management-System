@@ -1,0 +1,37 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Service Management</h1>
+      <p>Configure and monitor your active service touchpoints and operational flow.</p>
+    </div>
+    <button class="btn-primary">+ Add New Service</button>
+  </div>
+
+  @if (summary(); as s) {
+    <div class="kpi-grid">
+      <div class="kpi card"><span>Total Services</span><strong>{{ s.totalServices }}</strong></div>
+      <div class="kpi card"><span>Active Now</span><strong>{{ s.activeNow }}</strong></div>
+      <div class="kpi card"><span>Total Tokens (Today)</span><strong>{{ s.totalTokensToday }}</strong></div>
+    </div>
+  }
+
+  <div class="table-card card">
+    <h2>Service Touchpoints</h2>
+    <table>
+      <thead>
+        <tr><th>SERVICE DETAIL</th><th>DEPARTMENT</th><th>STATUS</th><th>DAILY VOLUME</th><th>WAIT TIME</th></tr>
+      </thead>
+      <tbody>
+        @for (row of services(); track row['id']) {
+          <tr>
+            <td><strong>{{ row['name'] }}</strong><br><small>{{ row['description'] }}</small></td>
+            <td>{{ row['department'] }}</td>
+            <td><span class="status" [class.off]="row['status'] !== 'Operational'">{{ row['status'] }}</span></td>
+            <td>{{ row['dailyVolume'] }} Users</td>
+            <td>{{ row['avgWaitTime'] }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

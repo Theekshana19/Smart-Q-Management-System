@@ -1,0 +1,21 @@
+.admin-layout { display: flex; min-height: 100vh; background: var(--bg); }
+.sidebar {
+  width: 260px; background: #fff; border-right: 1px solid var(--outline);
+  display: flex; flex-direction: column; padding: 1.5rem 1rem;
+  .brand { margin-bottom: 2rem; strong { display: block; color: var(--primary); font-size: 1.25rem; } small { color: var(--muted); letter-spacing: 0.1em; font-size: 0.65rem; } }
+  nav a {
+    display: block; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 0.25rem; color: var(--muted); font-weight: 500;
+    &.active { background: #e8f0fe; color: var(--primary); border-left: 4px solid var(--primary); }
+  }
+  .bottom { margin-top: auto; border-top: 1px solid var(--outline); padding-top: 1rem;
+    a { display: block; padding: 0.5rem 1rem; color: var(--muted); }
+    .sign-out { color: var(--error); }
+  }
+}
+.content { flex: 1; display: flex; flex-direction: column; }
+.admin-header {
+  display: flex; align-items: center; gap: 1rem; padding: 1rem 2rem; background: #fff; border-bottom: 1px solid var(--outline);
+  input { flex: 1; max-width: 480px; padding: 0.6rem 1.25rem; border-radius: 999px; border: 1px solid var(--outline); }
+  .icons { display: flex; gap: 0.75rem; color: var(--muted); }
+  .user { text-align: right; strong { display: block; } small { color: var(--muted); } }
+}

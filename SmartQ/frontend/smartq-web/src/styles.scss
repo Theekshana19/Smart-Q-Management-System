@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+
+:root {
+  --primary: #00346f;
+  --primary-dark: #001b3f;
+  --primary-container: #004a99;
+  --accent: #0b5bb5;
+  --secondary: #3e5f8f;
+  --secondary-container: #d5e3ff;
+  --bg: #f8f9fa;
+  --card: #ffffff;
+  --text: #0b1b33;
+  --muted: #697386;
+  --success: #00695c;
+  --error: #ba1a1a;
+  --outline: #c2c6d3;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0, 52, 111, 0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+
+a { color: inherit; text-decoration: none; }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--outline);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  &:hover { background: var(--primary-container); }
+}
+
+.btn-outline {
+  background: #fff;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.loading { text-align: center; padding: 2rem; color: var(--muted); }
+.error-msg { color: var(--error); padding: 1rem; }
+
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+}

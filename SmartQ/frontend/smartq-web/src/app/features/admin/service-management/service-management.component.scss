@@ -1,0 +1,4 @@
+@use '../dashboard/dashboard.component.scss';
+.table-card { padding: 1.5rem; margin-top: 1rem; h2 { margin-bottom: 1rem; } }
+table { width: 100%; border-collapse: collapse; th, td { text-align: left; padding: 1rem; border-bottom: 1px solid var(--outline); } th { font-size: 0.7rem; color: var(--muted); } }
+.status { background: #e8f5e9; color: var(--success); padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.8rem; &.off { background: #ffebee; color: var(--error); } }

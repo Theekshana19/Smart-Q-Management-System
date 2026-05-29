@@ -1,0 +1,6 @@
+@SmartQ.API_HostAddress = http://localhost:5105
+
+GET {{SmartQ.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
