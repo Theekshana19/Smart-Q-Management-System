@@ -15,11 +15,15 @@ public class Token
     public TokenStatus Status { get; set; }
     public TokenPriority Priority { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? QueuedAt { get; set; }
     public DateTime? CalledAt { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public DateTime? SkippedAt { get; set; }
     public DateTime? CancelledAt { get; set; }
+    public int TransferCount { get; set; }
+    public string? TransferredFromTokenNo { get; set; }
+    public DateTime? LastTransferredAt { get; set; }
     public int EstimatedWaitMinutes { get; set; }
 
     public Language Language { get; set; } = null!;

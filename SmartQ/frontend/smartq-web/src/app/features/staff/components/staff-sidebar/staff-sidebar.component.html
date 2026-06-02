@@ -1,0 +1,46 @@
+<aside class="sidebar">
+  <div class="brand">
+    <h1>Global Finance</h1>
+    <p>Staff Console</p>
+  </div>
+
+  <div class="profile" *ngIf="state.context()?.staff as staff">
+    <div class="avatar">{{ initials(staff.fullName) }}</div>
+    <div>
+      <p class="name">{{ staff.fullName }}</p>
+      <p class="role" *ngIf="state.context()?.counter as c">Counter {{ c.counterNo }}</p>
+    </div>
+  </div>
+
+  <nav>
+    <a routerLink="/staff/dashboard" routerLinkActive="active">
+      <span class="material-symbols-outlined">dashboard</span>
+      <span>Dashboard</span>
+    </a>
+    <a routerLink="/staff/queue-console" routerLinkActive="active">
+      <span class="material-symbols-outlined">queue</span>
+      <span>Queue Console</span>
+    </a>
+    <a routerLink="/staff/my-counter" routerLinkActive="active">
+      <span class="material-symbols-outlined">countertops</span>
+      <span>My Counter</span>
+    </a>
+    <a routerLink="/staff/token-history" routerLinkActive="active">
+      <span class="material-symbols-outlined">history</span>
+      <span>Token History</span>
+    </a>
+    <a routerLink="/staff/performance" routerLinkActive="active">
+      <span class="material-symbols-outlined">query_stats</span>
+      <span>Performance</span>
+    </a>
+  </nav>
+
+  <div class="bottom">
+    <button type="button"><span class="material-symbols-outlined">settings</span> Settings</button>
+    <button type="button"><span class="material-symbols-outlined">help</span> Help</button>
+    <button type="button" class="signout">
+      <span class="material-symbols-outlined">logout</span>
+      Sign Out
+    </button>
+  </div>
+</aside>

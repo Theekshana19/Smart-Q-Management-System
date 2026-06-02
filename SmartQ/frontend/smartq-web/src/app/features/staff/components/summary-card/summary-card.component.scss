@@ -1,0 +1,6 @@
+.card { background: #fff; border: 1px solid var(--staff-border); border-radius: 14px; padding: 16px; display: grid; gap: 6px; }
+.title { color: var(--staff-muted); font-size: 12px; letter-spacing: .02em; text-transform: uppercase; }
+.value { font-size: 34px; font-weight: 700; color: var(--staff-text); line-height: 1.1; }
+.hint { color: var(--staff-muted); font-size: 13px; }
+.progress { height: 6px; border-radius: 999px; background: var(--staff-blue-soft); overflow: hidden; }
+.bar { height: 100%; border-radius: 999px; background: var(--staff-teal); }

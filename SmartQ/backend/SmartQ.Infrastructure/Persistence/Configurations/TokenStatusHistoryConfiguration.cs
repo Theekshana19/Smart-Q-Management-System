@@ -10,6 +10,7 @@ public class TokenStatusHistoryConfiguration : IEntityTypeConfiguration<TokenSta
     {
         builder.HasKey(h => h.Id);
         builder.HasIndex(h => new { h.TokenId, h.ChangedAt });
+        builder.HasIndex(h => h.ChangedAt);
         builder.HasOne(h => h.Token).WithMany(t => t.StatusHistory).HasForeignKey(h => h.TokenId);
     }
 }

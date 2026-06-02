@@ -143,3 +143,5 @@ export interface VoiceTemplate {
   templateText: string;
   languageCode: string;
 }
+
+export * from './staff-console.models';

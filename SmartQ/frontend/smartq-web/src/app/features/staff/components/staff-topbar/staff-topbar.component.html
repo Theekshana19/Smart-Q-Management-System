@@ -1,0 +1,33 @@
+<header class="topbar">
+  <div class="left">
+    <div class="branch-pill" *ngIf="state.context()?.counter as c">
+      <span class="material-symbols-outlined">location_on</span>
+      <span>{{ c.branchName }}</span>
+    </div>
+    <div class="divider"></div>
+    <div class="tabs" *ngIf="state.context()?.counter as c">
+      <span class="tab active">Counter {{ c.counterNo }}</span>
+      <span class="tab muted">{{ c.branchName }}</span>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="online" [class.off]="!state.context()?.systemOnline">
+      <span class="dot"></span>
+      <span>{{ state.context()?.systemOnline ? 'Online' : 'Offline' }}</span>
+    </div>
+    <button type="button" class="break-btn">Break</button>
+    <button type="button" class="icon-btn" (click)="toggleNotifications()">
+      <span class="material-symbols-outlined">notifications</span>
+      <span class="badge-dot" *ngIf="(state.notifications()?.newCount ?? 0) > 0"></span>
+    </button>
+    <button type="button" class="icon-btn">
+      <span class="material-symbols-outlined">person</span>
+    </button>
+  </div>
+
+  <app-notification-panel
+    *ngIf="showNotifications()"
+    [notifications]="state.notifications()"
+    (close)="showNotifications.set(false)" />
+</header>

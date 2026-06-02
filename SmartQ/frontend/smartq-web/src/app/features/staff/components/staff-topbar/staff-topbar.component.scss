@@ -1,0 +1,81 @@
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: 64px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(198, 198, 205, 0.3);
+}
+.left { display: flex; align-items: center; gap: 24px; }
+.branch-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: #d3e4fe;
+  color: #000;
+  font-size: 14px;
+  font-weight: 600;
+}
+.branch-pill .material-symbols-outlined { font-size: 16px; }
+.divider { width: 1px; height: 24px; background: rgba(198, 198, 205, 0.4); }
+.tabs { display: flex; gap: 16px; align-items: center; }
+.tab { font-size: 14px; font-weight: 600; color: #000; }
+.tab.active { border-bottom: 2px solid #000; padding-bottom: 4px; }
+.tab.muted { color: #45464d; font-weight: 500; border: none; padding-bottom: 0; }
+.right { display: flex; align-items: center; gap: 16px; position: relative; }
+.online {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(129, 242, 235, 0.2);
+  border: 1px solid rgba(0, 106, 102, 0.2);
+  color: #006a66;
+  font-size: 12px;
+  font-weight: 700;
+}
+.online.off { color: #ba1a1a; background: #ffdad6; border-color: #ffdad6; }
+.dot { width: 8px; height: 8px; border-radius: 999px; background: #006a66; animation: pulse 1.5s infinite; }
+.online.off .dot { background: #ba1a1a; }
+.break-btn {
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: 1px solid #c6c6cd;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.icon-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #45464d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn:hover { background: #dce9ff; }
+.badge-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ba1a1a;
+  border: 2px solid #fff;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }

@@ -1,0 +1,192 @@
+<div class="error-card" *ngIf="error()">
+  {{ error() }}
+  <button type="button" (click)="load()">Retry</button>
+</div>
+
+@if (loading()) {
+  <p class="loading">Loading counter workspace...</p>
+} @else if (data(); as d) {
+  <div class="my-counter-page">
+    <section class="hero-row">
+      <div class="hero-copy">
+        <nav class="breadcrumb">
+          <span>Counters</span>
+          <span>/</span>
+          <span class="active">{{ d.context.counter.counterName }}</span>
+        </nav>
+        <h1>
+          {{ d.context.counter.counterName }} — Active
+          <span class="status-pill" [class.serving]="isInService(d)">{{ statusLabel(d) }}</span>
+        </h1>
+        <p>{{ greeting(d) }}</p>
+      </div>
+      <div class="hero-stats">
+        <article class="stat-card">
+          <p>Served Today</p>
+          <h3>{{ d.summary.servedToday }}</h3>
+        </article>
+        <article class="stat-card">
+          <p>Avg Service</p>
+          <h3>{{ d.summary.avgServiceTime }}</h3>
+        </article>
+      </div>
+    </section>
+
+    <section class="bento-grid">
+      <div class="main-col">
+        @if (d.activeSession; as active) {
+          <article class="current-token-card">
+            <div class="service-time">
+              <span>Service Time</span>
+              <strong>{{ elapsedDisplay() }}</strong>
+            </div>
+            <div class="token-body">
+              <span class="now-label">NOW SERVING</span>
+              <div class="token-headline">
+                <h2>{{ displayTokenNo(active.tokenNo) }}</h2>
+                <span>{{ active.subServiceName }}</span>
+              </div>
+              <div class="token-meta" *ngIf="d.activeDetails as details">
+                <div>
+                  <p>Token ID</p>
+                  <strong>{{ details.tokenIdLabel }}</strong>
+                </div>
+                <div>
+                  <p>Customer</p>
+                  <strong>{{ details.customerLabel }}</strong>
+                </div>
+                <div>
+                  <p>Priority</p>
+                  <strong class="priority">
+                    <span class="material-symbols-outlined" [style.font-variation-settings]="priorityIconFill(active.priority)">star</span>
+                    {{ active.priority }}
+                  </strong>
+                </div>
+                <div>
+                  <p>Wait Time</p>
+                  <strong>{{ details.waitTimeDisplay }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="token-actions">
+              <button type="button" class="btn-primary" (click)="complete()" [disabled]="actionBusy()">Complete Task</button>
+              <button type="button" class="btn-outline" (click)="transfer()" [disabled]="actionBusy()">Transfer</button>
+              <button type="button" class="btn-danger" (click)="noShow()" [disabled]="actionBusy() || active.status !== 'CALLED'">No Show</button>
+            </div>
+          </article>
+        } @else {
+          <article class="current-token-card idle">
+            <span class="now-label">NOW SERVING</span>
+            <h2>---</h2>
+            <p>{{ msg('STAFF_MY_COUNTER_IDLE', 'No active token. Go to Queue Console to call the next customer.') }}</p>
+            <a routerLink="/staff/queue-console" class="btn-primary link-btn">Open Queue Console</a>
+          </article>
+        }
+
+        <div class="status-actions">
+          <button type="button" class="status-card available" (click)="setCounterStatus('AVAILABLE')" [disabled]="actionBusy()">
+            <span class="material-symbols-outlined">play_arrow</span>
+            <span>Set Available</span>
+          </button>
+          <button type="button" class="status-card" (click)="setCounterStatus('BUSY')" [disabled]="actionBusy()">
+            <span class="material-symbols-outlined">do_not_disturb_on</span>
+            <span>Set Busy</span>
+          </button>
+          <button type="button" class="status-card" (click)="setCounterStatus('BREAK')" [disabled]="actionBusy()">
+            <span class="material-symbols-outlined">coffee</span>
+            <span>Take Break</span>
+          </button>
+          <button type="button" class="status-card offline" (click)="setCounterStatus('OFFLINE')" [disabled]="actionBusy()">
+            <span class="material-symbols-outlined">power_settings_new</span>
+            <span>Mark Offline</span>
+          </button>
+        </div>
+      </div>
+
+      <aside class="side-col">
+        <article class="panel assigned">
+          <header>
+            <h3>Assigned Services</h3>
+          </header>
+          <div class="service-groups">
+            @for (service of d.context.assignedServices; track service.serviceId) {
+              <div class="service-group">
+                <div class="service-title">
+                  <span class="material-symbols-outlined">{{ service.icon || 'category' }}</span>
+                  <p>{{ service.name }}</p>
+                </div>
+                <div class="prefixes">
+                  @for (prefix of service.tokenPrefixes; track prefix) {
+                    <span>{{ prefix }}</span>
+                  }
+                </div>
+              </div>
+            }
+            @if (d.context.assignedServices.length === 0) {
+              <p class="muted">No services assigned to this counter.</p>
+            }
+          </div>
+          <div class="queue-pressure">
+            <div class="pressure-head">
+              <span>Queue Waiting</span>
+              <strong [class.high]="d.summary.queuePressure === 'HIGH'">{{ d.summary.waiting }} Tokens</strong>
+            </div>
+            <div class="pressure-track">
+              <div class="pressure-fill" [style.width.%]="d.queuePressurePercent"></div>
+            </div>
+            <p>{{ d.queuePressureLabel }}</p>
+          </div>
+        </article>
+
+        <article class="panel upcoming">
+          <h3>Upcoming Tokens</h3>
+          <div class="upcoming-list">
+            @for (item of d.upcomingTokens; track item.tokenId) {
+              <div class="upcoming-item">
+                <div class="upcoming-main">
+                  <span class="prefix-badge">{{ item.tokenPrefixBadge }}</span>
+                  <div>
+                    <p>{{ item.tokenNo }}</p>
+                    <small>{{ item.subServiceName }} • Wait: {{ item.waitMinutes }}m</small>
+                  </div>
+                </div>
+                <span class="material-symbols-outlined">chevron_right</span>
+              </div>
+            }
+            @if (d.upcomingTokens.length === 0) {
+              <p class="muted">No waiting tokens for assigned services.</p>
+            }
+          </div>
+          <a routerLink="/staff/queue-console" class="view-queue">View Full Queue</a>
+        </article>
+      </aside>
+    </section>
+
+    <section class="efficiency-banner">
+      <div class="eff-left">
+        <h4>Efficiency Rating</h4>
+        <div class="eff-value">
+          <span>{{ d.efficiency.efficiencyPercent }}%</span>
+          <small>
+            <span class="material-symbols-outlined">trending_up</span>
+            {{ d.efficiency.efficiencyTrend }}
+          </small>
+        </div>
+      </div>
+      <div class="eff-stats">
+        <div>
+          <p>Break Time Used</p>
+          <strong>{{ d.efficiency.breakTimeDisplay }}</strong>
+        </div>
+        <div>
+          <p>Success Rate</p>
+          <strong>{{ d.efficiency.successRateDisplay }}</strong>
+        </div>
+        <div>
+          <p>Shift Ends In</p>
+          <strong>{{ d.efficiency.shiftEndsInDisplay }}</strong>
+        </div>
+      </div>
+    </section>
+  </div>
+}

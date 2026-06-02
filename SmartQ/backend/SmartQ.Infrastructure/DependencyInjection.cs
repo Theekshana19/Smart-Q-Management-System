@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICounterService, CounterService>();
+        services.AddScoped<IStaffConsoleService, StaffConsoleService>();
         services.AddScoped<IDisplayService, DisplayService>();
         services.AddScoped<IAdminService, AdminService>();
 

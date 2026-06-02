@@ -1,0 +1,95 @@
+<div class="loading" *ngIf="loading()">Loading dashboard...</div>
+
+<div class="dashboard" *ngIf="!loading() && context() as ctx">
+  <div class="main-col">
+    <section class="hero">
+      <div class="hero-content">
+        <h1>{{ ctx.counter.branchName }} Monitor</h1>
+        <p>Real-time performance analytics for current shift. System health: {{ ctx.systemOnline ? 100 : 0 }}%.</p>
+        <div class="hero-actions">
+          <button class="primary">Process Next Token</button>
+          <button class="outline">Full Report</button>
+        </div>
+      </div>
+      <div class="hero-art"></div>
+    </section>
+
+    <div class="stats-row">
+      <app-summary-card title="Avg. Wait Time" [value]="waitDisplay(summary()?.avgWaitMinutes ?? 0)"></app-summary-card>
+      <app-summary-card title="Tokens Today" [value]="(summary()?.servedToday ?? 0).toString()"></app-summary-card>
+      <app-summary-card title="Staff Efficiency" [value]="(summary()?.queuePressure ?? 'NORMAL')" [progressPercent]="summary()?.queuePressure === 'HIGH' ? 90 : (summary()?.queuePressure === 'NORMAL' ? 60 : 30)"></app-summary-card>
+    </div>
+
+    <section class="table-card">
+      <div class="header">
+        <h3>Active Counters</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Counter</th>
+            <th>Staff Member</th>
+            <th>Status</th>
+            <th>Token</th>
+            <th class="right">Load</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let q of queue() | slice:0:8">
+            <td>Counter {{ ctx.counter.counterNo }}</td>
+            <td>{{ ctx.staff?.fullName || '-' }}</td>
+            <td><app-status-badge [text]="summary()?.currentStatus || 'AVAILABLE'" [kind]="statusKind(summary()?.currentStatus || 'AVAILABLE')"></app-status-badge></td>
+            <td>{{ q.tokenNo }}</td>
+            <td class="right">
+              <div class="load">
+                <div class="track"><div class="fill" [style.width.%]="(q.waitMinutes / compositionMax()) * 100"></div></div>
+                <span>{{ q.waitMinutes > 10 ? 'High' : (q.waitMinutes > 5 ? 'Medium' : 'Low') }}</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <div class="side-col">
+    <section class="panel notifications">
+      <div class="head">
+        <h3>Staff Notifications</h3>
+        <span>{{ notifications()?.newCount ?? 0 }} New</span>
+      </div>
+      <div class="items">
+        <article *ngFor="let n of (notifications()?.items ?? []) | slice:0:4">
+          <h4>{{ n.title }}</h4>
+          <p>{{ n.description }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3>Queue Composition</h3>
+      <div class="bars">
+        <div class="bar-item" *ngFor="let q of queue() | slice:0:4">
+          <div class="bar" [style.height.%]="(q.waitMinutes / compositionMax()) * 100"></div>
+          <span>{{ q.tokenNo.split('-')[0] }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3>System Status</h3>
+      <div class="status-list">
+        <article><strong>Main Server</strong><p>{{ ctx.systemOnline ? 'Response time: healthy' : 'Offline' }}</p></article>
+        <article><strong>Counter Status</strong><p>{{ summary()?.currentStatus || 'UNKNOWN' }}</p></article>
+        <article><strong>Data Sync</strong><p>{{ queue().length }} items in live queue</p></article>
+      </div>
+    </section>
+
+    <section class="panel live">
+      <div class="live-head">Live Stream: Zone A</div>
+      <div class="live-body">
+        <div class="empty">{{ state.msg('STAFF_TV_BRANCH_MESSAGE', 'Public display shows branch-wide waiting and called tokens.') }}</div>
+      </div>
+    </section>
+  </div>
+</div>

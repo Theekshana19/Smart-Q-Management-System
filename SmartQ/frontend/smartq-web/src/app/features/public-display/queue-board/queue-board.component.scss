@@ -204,10 +204,35 @@
     min-width: 0;
   }
 
+  .tok-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
   .tok {
     font-weight: 800;
     font-size: clamp(1.35rem, 2.2vw, 1.75rem);
     letter-spacing: 0.02em;
+  }
+
+  .transfer-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.2rem;
+    height: 1.2rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    border: 1px solid #6be7d4;
+    background: rgba(23, 205, 183, 0.18);
+    color: #b7fff3;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+    transform: translateY(1px);
   }
 
   .svc {

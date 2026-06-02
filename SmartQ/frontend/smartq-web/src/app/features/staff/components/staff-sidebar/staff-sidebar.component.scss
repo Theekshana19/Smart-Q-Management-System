@@ -1,0 +1,70 @@
+.sidebar {
+  width: 256px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(198, 198, 205, 0.3);
+}
+.brand { padding: 0 24px 24px; }
+.brand h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 700; color: #000; }
+.brand p { font-size: 14px; color: #45464d; opacity: 0.7; margin-top: 4px; }
+.profile {
+  margin: 0 16px 24px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #eff4ff;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #dce9ff;
+  color: #006a66;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  border: 2px solid #fff;
+}
+.name { font-size: 14px; font-weight: 600; }
+.role { font-size: 10px; font-weight: 700; color: #006a66; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+nav { flex: 1; display: grid; gap: 4px; align-content: start; }
+nav a {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  color: #45464d;
+  font-size: 14px;
+  font-weight: 500;
+  border-left: 4px solid transparent;
+  text-decoration: none;
+}
+nav a.active {
+  color: #006a66;
+  font-weight: 700;
+  border-left-color: #006a66;
+  background: rgba(129, 242, 235, 0.1);
+}
+.bottom { margin-top: auto; border-top: 1px solid rgba(198, 198, 205, 0.2); padding-top: 16px; display: grid; gap: 4px; }
+.bottom button {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  color: #45464d;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+.bottom .signout { color: #ba1a1a; font-weight: 700; }

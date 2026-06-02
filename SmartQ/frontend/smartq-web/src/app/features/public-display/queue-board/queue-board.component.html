@@ -45,7 +45,12 @@
                 <span class="up-next-badge">UP NEXT</span>
               }
               <div class="wait-item-main">
-                <span class="tok">{{ item.tokenNo }}</span>
+                <span class="tok-line">
+                  <span class="tok">{{ item.tokenNo }}</span>
+                  @if (isTransferredToken(item.tokenNo)) {
+                    <span class="transfer-badge" title="Transferred token">T</span>
+                  }
+                </span>
                 <span class="svc">{{ item.subServiceName }}</span>
               </div>
               <span class="wait-mins">

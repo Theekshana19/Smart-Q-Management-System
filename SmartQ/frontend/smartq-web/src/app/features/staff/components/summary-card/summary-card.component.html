@@ -1,0 +1,8 @@
+<article class="card">
+  <span class="title">{{ title }}</span>
+  <span class="value">{{ value }}</span>
+  <span class="hint" *ngIf="hint">{{ hint }}</span>
+  <div class="progress" *ngIf="progressPercent !== undefined">
+    <div class="bar" [style.width.%]="progressPercent"></div>
+  </div>
+</article>

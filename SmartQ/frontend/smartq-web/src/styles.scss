@@ -17,6 +17,17 @@
   --outline: #c2c6d3;
   --radius: 12px;
   --shadow: 0 4px 24px rgba(0, 52, 111, 0.08);
+  --staff-bg: #f6f8fc;
+  --staff-card: #ffffff;
+  --staff-text: #101828;
+  --staff-muted: #667085;
+  --staff-primary: #000000;
+  --staff-navy: #06377b;
+  --staff-teal: #00796b;
+  --staff-teal-soft: #e6fbf8;
+  --staff-danger: #c5161d;
+  --staff-border: #e6eaf2;
+  --staff-blue-soft: #edf4ff;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -76,4 +87,46 @@ button {
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }
   .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+}
+
+/* SweetAlert2 staff theme */
+.staff-swal-popup {
+  border-radius: 16px !important;
+  border: 1px solid var(--staff-border) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+  font-family: 'Inter', sans-serif !important;
+}
+.staff-swal-title {
+  color: var(--staff-primary) !important;
+  font-weight: 700 !important;
+  font-size: 24px !important;
+}
+.staff-swal-text {
+  color: var(--staff-muted) !important;
+  font-size: 14px !important;
+}
+.staff-swal-confirm {
+  background: #000 !important;
+  color: #fff !important;
+  border: 1px solid #000 !important;
+  border-radius: 10px !important;
+  padding: 10px 18px !important;
+  font-weight: 600 !important;
+  margin: 0 6px !important;
+}
+.staff-swal-cancel {
+  background: #fff !important;
+  color: var(--staff-text) !important;
+  border: 1px solid var(--staff-border) !important;
+  border-radius: 10px !important;
+  padding: 10px 18px !important;
+  font-weight: 600 !important;
+  margin: 0 6px !important;
+}
+.staff-swal-validation {
+  background: #ffdad6 !important;
+  color: #93000a !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
 }

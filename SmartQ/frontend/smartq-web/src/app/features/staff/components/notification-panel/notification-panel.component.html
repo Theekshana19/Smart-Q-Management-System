@@ -1,0 +1,18 @@
+<div class="panel">
+  <div class="head">
+    <h3>Staff Notifications</h3>
+    <span>{{ notifications?.newCount ?? 0 }} New</span>
+  </div>
+  <div class="items">
+    <article *ngFor="let n of notifications?.items ?? []">
+      <div class="icon"><span class="material-symbols-outlined">{{ icon(n.type) }}</span></div>
+      <div>
+        <h4>{{ n.title }}</h4>
+        <p>{{ n.description }}</p>
+        <time>{{ n.createdAt | date:'shortTime' }}</time>
+      </div>
+    </article>
+    <p class="empty" *ngIf="!(notifications?.items?.length)">No notifications.</p>
+  </div>
+  <button type="button" class="footer" (click)="close.emit()">View All Activities</button>
+</div>

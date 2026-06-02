@@ -50,6 +50,24 @@ export class QueueBoardComponent implements OnInit, OnDestroy {
   }
 
   private applyBoard(b: DisplayBoard, announce: boolean): void {
-    this.board.set(b);
+    const waitingItems = [...b.waitingQueue.items];
+    waitingItems.sort((a, z) => {
+      const aTransferred = this.isTransferredToken(a.tokenNo);
+      const zTransferred = this.isTransferredToken(z.tokenNo);
+      if (aTransferred === zTransferred) return 0;
+      return aTransferred ? 1 : -1;
+    });
+
+    this.board.set({
+      ...b,
+      waitingQueue: {
+        ...b.waitingQueue,
+        items: waitingItems
+      }
+    });
+  }
+
+  isTransferredToken(tokenNo: string): boolean {
+    return tokenNo.toUpperCase().includes('(T)');
   }
 }

@@ -70,6 +70,7 @@ public class TokenService : ITokenService
                 Status = TokenStatus.WAITING,
                 Priority = TokenPriority.STANDARD,
                 CreatedAt = DateTime.Now,
+                QueuedAt = DateTime.Now,
                 EstimatedWaitMinutes = sub.EstimatedServiceMinutes + waitingBefore * 2
             };
             _db.Tokens.Add(token);
@@ -196,11 +197,18 @@ public class TokenService : ITokenService
         var token = await _db.Tokens.Include(t => t.Counter).Include(t => t.Service).Include(t => t.SubService)
             .FirstOrDefaultAsync(t => t.Id == tokenId, ct);
         if (token == null) return null;
+        var oldTokenNo = token.TokenNo;
 
         await AddHistory(token, token.Status, TokenStatus.TRANSFERRED, ct, targetCounterId);
         token.Status = TokenStatus.WAITING;
         token.CounterId = null;
         token.CalledAt = null;
+        token.QueuedAt = DateTime.Now;
+        token.TransferCount += 1;
+        token.LastTransferredAt = DateTime.Now;
+        token.TransferredFromTokenNo = token.TransferCount > 1 && !string.IsNullOrWhiteSpace(token.TransferredFromTokenNo)
+            ? token.TransferredFromTokenNo
+            : oldTokenNo;
         await _db.SaveChangesAsync(ct);
         return MapDetail(token);
     }

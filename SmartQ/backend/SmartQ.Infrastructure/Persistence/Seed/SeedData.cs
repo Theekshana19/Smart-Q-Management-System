@@ -209,8 +209,20 @@ public static class SeedData
             ("KIOSK_AUTO_RETURN_SECONDS", "5", "int", "Kiosk auto return seconds after finish"),
             ("ENABLE_PRIORITY_QUEUE", "true", "bool", "Priority tokens called before standard"),
             ("BRANCH_ID", "BR-9904", "string", "Branch identifier"),
-            ("BRANCH_NAME", "SmartQ Bank Central Branch", "string", "Branch display name"),
-            ("KIOSK_VERSION", "v2.4", "string", "Kiosk software version")
+            ("BRANCH_NAME", "Branch Alpha", "string", "Branch display name"),
+            ("KIOSK_VERSION", "v2.4", "string", "Kiosk software version"),
+            ("WAIT_TIME_WARNING_MINUTES", "10", "int", "Waiting threshold warning in minutes"),
+            ("STAFF_UI_THEME", "ENTERPRISE_TEAL", "string", "Staff UI theme"),
+            ("TRANSFER_REGENERATE_TOKEN", "false", "bool", "Regenerate token number on transfer"),
+            ("STAFF_AUTO_REFRESH_SECONDS", "10", "int", "Staff console auto refresh interval"),
+            ("CALL_NEXT_LOCK_WHEN_ACTIVE_TOKEN", "true", "bool", "Lock call next while active token exists"),
+            ("SYSTEM_ONLINE", "true", "bool", "System online/offline flag"),
+            ("STAFF_TOKEN_ID_FORMAT", "TK-{id}", "string", "Active token id label format"),
+            ("STAFF_MY_COUNTER_UPCOMING_COUNT", "3", "int", "Upcoming tokens shown on My Counter"),
+            ("STAFF_QUEUE_PRESSURE_HIGH_THRESHOLD", "12", "int", "Waiting count threshold for high queue pressure"),
+            ("STAFF_BREAK_ALLOWANCE_MINUTES", "60", "int", "Allowed break minutes per shift"),
+            ("STAFF_BREAK_USED_MINUTES", "15", "int", "Break minutes used in current shift"),
+            ("STAFF_SHIFT_END_TIME", "17:00", "string", "Shift end time (HH:mm)")
         };
         int id = 1;
         foreach (var (key, val, type, desc) in settings)
@@ -237,7 +249,27 @@ public static class SeedData
             new DisplayMessage { Id = 1, LanguageId = null, MessageKey = "TICKER_1", MessageText = "PLEASE PROCEED TO YOUR COUNTER WHEN YOUR TOKEN IS CALLED", IsActive = true, DisplayOrder = 1 },
             new DisplayMessage { Id = 2, LanguageId = null, MessageKey = "TICKER_2", MessageText = "DOWNLOAD THE SMARTQ APP FOR INSTANT NOTIFICATIONS", IsActive = true, DisplayOrder = 2 },
             new DisplayMessage { Id = 3, LanguageId = null, MessageKey = "TICKER_3", MessageText = "THANK YOU FOR PATIENTLY WAITING AT SMARTQ BANK", IsActive = true, DisplayOrder = 3 },
-            new DisplayMessage { Id = 4, LanguageId = null, MessageKey = "MOBILE_BANKING", MessageText = "Scan QR on your receipt to track your turn live.", IsActive = true, DisplayOrder = 4 }
+            new DisplayMessage { Id = 4, LanguageId = null, MessageKey = "MOBILE_BANKING", MessageText = "Scan QR on your receipt to track your turn live.", IsActive = true, DisplayOrder = 4 },
+            new DisplayMessage { Id = 5, LanguageId = null, MessageKey = "STAFF_EMPTY_QUEUE_TITLE", MessageText = "No active token", IsActive = true, DisplayOrder = 5 },
+            new DisplayMessage { Id = 6, LanguageId = null, MessageKey = "STAFF_EMPTY_QUEUE_DESCRIPTION", MessageText = "The counter is currently idle. Click Call Next to serve the next customer in the priority queue.", IsActive = true, DisplayOrder = 6 },
+            new DisplayMessage { Id = 7, LanguageId = null, MessageKey = "STAFF_CALL_NEXT_LOCKED_MESSAGE", MessageText = "Complete or skip current token before calling next", IsActive = true, DisplayOrder = 7 },
+            new DisplayMessage { Id = 8, LanguageId = null, MessageKey = "STAFF_TRANSFER_WARNING", MessageText = "Transferred token will leave this counter's queue and be added to the destination's waiting list immediately.", IsActive = true, DisplayOrder = 8 },
+            new DisplayMessage { Id = 9, LanguageId = null, MessageKey = "STAFF_COUNTER_SERVES_MESSAGE", MessageText = "You are currently handling assigned services for this counter.", IsActive = true, DisplayOrder = 9 },
+            new DisplayMessage { Id = 10, LanguageId = null, MessageKey = "STAFF_TV_BRANCH_MESSAGE", MessageText = "Public display shows branch-wide waiting and called tokens.", IsActive = true, DisplayOrder = 10 },
+            new DisplayMessage { Id = 11, LanguageId = null, MessageKey = "STAFF_MY_COUNTER_GREETING", MessageText = "You are currently handling the priority queue for assigned services.", IsActive = true, DisplayOrder = 11 },
+            new DisplayMessage { Id = 12, LanguageId = null, MessageKey = "STAFF_MY_COUNTER_IDLE", MessageText = "No active token. Go to Queue Console to call the next customer.", IsActive = true, DisplayOrder = 12 },
+            new DisplayMessage { Id = 13, LanguageId = null, MessageKey = "STAFF_CUSTOMER_LABEL_VIP", MessageText = "Priority Member", IsActive = true, DisplayOrder = 13 },
+            new DisplayMessage { Id = 14, LanguageId = null, MessageKey = "STAFF_CUSTOMER_LABEL_STANDARD", MessageText = "Regular Member", IsActive = true, DisplayOrder = 14 },
+            new DisplayMessage { Id = 15, LanguageId = null, MessageKey = "STAFF_QUEUE_PRESSURE_HIGH", MessageText = "Queue pressure is high. Avoid taking breaks at this time.", IsActive = true, DisplayOrder = 15 },
+            new DisplayMessage { Id = 16, LanguageId = null, MessageKey = "STAFF_QUEUE_PRESSURE_NORMAL", MessageText = "Queue pressure is moderate.", IsActive = true, DisplayOrder = 16 },
+            new DisplayMessage { Id = 17, LanguageId = null, MessageKey = "STAFF_QUEUE_PRESSURE_LOW", MessageText = "Queue pressure is low.", IsActive = true, DisplayOrder = 17 },
+            new DisplayMessage { Id = 18, LanguageId = null, MessageKey = "STAFF_COUNTER_STATUS_AVAILABLE_OK", MessageText = "Counter is now available.", IsActive = true, DisplayOrder = 18 },
+            new DisplayMessage { Id = 19, LanguageId = null, MessageKey = "STAFF_COUNTER_STATUS_BUSY_OK", MessageText = "Counter marked as busy.", IsActive = true, DisplayOrder = 19 },
+            new DisplayMessage { Id = 20, LanguageId = null, MessageKey = "STAFF_COUNTER_STATUS_BREAK_OK", MessageText = "Break started. Counter is offline.", IsActive = true, DisplayOrder = 20 },
+            new DisplayMessage { Id = 21, LanguageId = null, MessageKey = "STAFF_COUNTER_STATUS_OFFLINE_OK", MessageText = "Counter marked offline.", IsActive = true, DisplayOrder = 21 },
+            new DisplayMessage { Id = 22, LanguageId = null, MessageKey = "STAFF_COUNTER_STATUS_ACTIVE_BLOCK", MessageText = "Complete current token before setting available.", IsActive = true, DisplayOrder = 22 },
+            new DisplayMessage { Id = 23, LanguageId = null, MessageKey = "STAFF_EFFICIENCY_TREND", MessageText = "+2% since last hour", IsActive = true, DisplayOrder = 23 },
+            new DisplayMessage { Id = 24, LanguageId = null, MessageKey = "STAFF_SHIFT_ENDED", MessageText = "Shift ended", IsActive = true, DisplayOrder = 24 }
         );
     }
 }

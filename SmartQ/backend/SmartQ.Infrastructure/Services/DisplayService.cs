@@ -17,13 +17,23 @@ public class DisplayService : IDisplayService
         var token = await _db.Tokens.AsNoTracking()
             .Include(t => t.Counter)
             .Include(t => t.Service)
+            .Include(t => t.SubService)
             .Where(t => t.Status == TokenStatus.CALLED || t.Status == TokenStatus.SERVING)
             .OrderByDescending(t => t.CalledAt)
             .FirstOrDefaultAsync(ct);
 
-        return token?.Counter == null ? null : new NowServingDto(
-            token.TokenNo, token.Counter.CounterName, token.Counter.CounterNo,
-            token.Service.Name, token.CalledAt);
+        if (token?.Counter == null)
+        {
+            return null;
+        }
+
+        var latestTransferRemark = await GetLatestTransferRemarkAsync(token.Id, ct);
+        return new NowServingDto(
+            FormatDisplayTokenNo(token),
+            token.Counter.CounterName,
+            token.Counter.CounterNo,
+            FormatDisplayServiceName(token, latestTransferRemark),
+            token.CalledAt);
     }
 
     public async Task<IReadOnlyList<RecentlyCalledDto>> GetRecentlyCalledAsync(CancellationToken ct = default)
@@ -32,14 +42,27 @@ public class DisplayService : IDisplayService
         var tokens = await _db.Tokens.AsNoTracking()
             .Include(t => t.Counter)
             .Include(t => t.Service)
+            .Include(t => t.SubService)
             .Where(t => t.CalledAt != null && t.Status != TokenStatus.WAITING)
             .OrderByDescending(t => t.CalledAt)
             .Take(count)
             .ToListAsync(ct);
 
+        var tokenIds = tokens.Select(t => t.Id).ToList();
+        var latestTransferRemarks = tokenIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await _db.TokenStatusHistories.AsNoTracking()
+                .Where(h => tokenIds.Contains(h.TokenId) && h.NewStatus == TokenStatus.TRANSFERRED && h.Remarks != null)
+                .GroupBy(h => h.TokenId)
+                .Select(g => new { TokenId = g.Key, Remark = g.OrderByDescending(x => x.ChangedAt).Select(x => x.Remarks!).FirstOrDefault()! })
+                .ToDictionaryAsync(x => x.TokenId, x => x.Remark, ct);
+
         return tokens.Select(t => new RecentlyCalledDto(
-            t.TokenNo, t.Counter?.CounterName ?? "-", t.Counter?.CounterNo ?? "-",
-            t.Service.Name, t.CalledAt!.Value)).ToList();
+            FormatDisplayTokenNo(t),
+            t.Counter?.CounterName ?? "-",
+            t.Counter?.CounterNo ?? "-",
+            FormatDisplayServiceName(t, latestTransferRemarks.TryGetValue(t.Id, out var remark) ? remark : null),
+            t.CalledAt!.Value)).ToList();
     }
 
     public async Task<WaitingQueueDto> GetWaitingQueueAsync(CancellationToken ct = default)
@@ -49,16 +72,30 @@ public class DisplayService : IDisplayService
             .Include(t => t.Service)
             .Include(t => t.SubService)
             .Where(t => t.Status == TokenStatus.WAITING)
-            .OrderBy(t => t.CreatedAt)
+            // Always keep transferred tokens behind non-transferred tokens in public queue.
+            .OrderBy(t => (t.TransferCount > 0 || t.TransferredFromTokenNo != null) ? 1 : 0)
+            .ThenBy(t => t.QueuedAt ?? t.CreatedAt)
+            .ThenBy(t => t.CreatedAt)
             .Take(count)
             .ToListAsync(ct);
+
+        var tokenIds = items.Select(i => i.Id).ToList();
+        var latestTransferRemarks = tokenIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await _db.TokenStatusHistories.AsNoTracking()
+                .Where(h => tokenIds.Contains(h.TokenId) && h.NewStatus == TokenStatus.TRANSFERRED && h.Remarks != null)
+                .GroupBy(h => h.TokenId)
+                .Select(g => new { TokenId = g.Key, Remark = g.OrderByDescending(x => x.ChangedAt).Select(x => x.Remarks!).FirstOrDefault()! })
+                .ToDictionaryAsync(x => x.TokenId, x => x.Remark, ct);
 
         var avgWait = items.Count > 0
             ? (int)items.Average(i => (DateTime.Now - i.CreatedAt).TotalMinutes) + 5
             : await GetSettingIntAsync("DEFAULT_ESTIMATED_WAIT_MINUTES", 8, ct);
 
         return new WaitingQueueDto(avgWait, items.Select(i => new WaitingQueueItemDto(
-            i.TokenNo, i.Service.Name, i.SubService.Name,
+            FormatDisplayTokenNo(i),
+            i.Service.Name,
+            FormatDisplayServiceName(i, latestTransferRemarks.TryGetValue(i.Id, out var remark) ? remark : null),
             (int)(DateTime.Now - i.CreatedAt).TotalMinutes)).ToList());
     }
 
@@ -92,5 +129,43 @@ public class DisplayService : IDisplayService
     {
         var s = await _db.SystemSettings.AsNoTracking().FirstOrDefaultAsync(x => x.SettingKey == key, ct);
         return s != null && int.TryParse(s.SettingValue, out var v) ? v : fallback;
+    }
+
+    private async Task<string?> GetLatestTransferRemarkAsync(int tokenId, CancellationToken ct) =>
+        await _db.TokenStatusHistories.AsNoTracking()
+            .Where(h => h.TokenId == tokenId && h.NewStatus == TokenStatus.TRANSFERRED && h.Remarks != null)
+            .OrderByDescending(h => h.ChangedAt)
+            .Select(h => h.Remarks)
+            .FirstOrDefaultAsync(ct);
+
+    private static string FormatDisplayTokenNo(Domain.Entities.Token token)
+    {
+        if (token.TransferCount <= 0)
+        {
+            return token.TokenNo;
+        }
+
+        if (!string.IsNullOrWhiteSpace(token.TransferredFromTokenNo))
+        {
+            return $"{token.TransferredFromTokenNo} ({token.TokenNo}(T))";
+        }
+
+        return $"{token.TokenNo} (T)";
+    }
+
+    private static string FormatDisplayServiceName(Domain.Entities.Token token, string? latestTransferRemark)
+    {
+        if (token.TransferCount <= 0 || string.IsNullOrWhiteSpace(latestTransferRemark))
+        {
+            return token.SubService.Name;
+        }
+
+        const string prefix = "Transfer: ";
+        if (latestTransferRemark.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return latestTransferRemark[prefix.Length..].Trim();
+        }
+
+        return token.SubService.Name;
     }
 }

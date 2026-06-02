@@ -9,6 +9,8 @@ export class QueueSignalRService {
   private connection?: signalR.HubConnection;
 
   readonly tokenCalled$ = new Subject<CallNextResponse>();
+  readonly tokenCompleted$ = new Subject<unknown>();
+  readonly tokenSkipped$ = new Subject<unknown>();
   readonly displayUpdated$ = new Subject<DisplayBoard>();
   readonly queueUpdated$ = new Subject<unknown>();
 
@@ -21,6 +23,8 @@ export class QueueSignalRService {
       .build();
 
     this.connection.on('TokenCalled', (data: CallNextResponse) => this.tokenCalled$.next(data));
+    this.connection.on('TokenCompleted', (data: unknown) => this.tokenCompleted$.next(data));
+    this.connection.on('TokenSkipped', (data: unknown) => this.tokenSkipped$.next(data));
     this.connection.on('DisplayUpdated', (data: DisplayBoard) => this.displayUpdated$.next(data));
     this.connection.on('QueueUpdated', (data: unknown) => this.queueUpdated$.next(data));
 

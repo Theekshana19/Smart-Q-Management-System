@@ -58,9 +58,11 @@ public class CounterService : ICounterService
 
         if (priorityEnabled)
             waitingQuery = waitingQuery.OrderByDescending(t => t.Priority != TokenPriority.STANDARD)
+                .ThenBy(t => t.QueuedAt ?? t.CreatedAt)
                 .ThenBy(t => t.CreatedAt);
         else
-            waitingQuery = waitingQuery.OrderBy(t => t.CreatedAt);
+            waitingQuery = waitingQuery.OrderBy(t => t.QueuedAt ?? t.CreatedAt)
+                .ThenBy(t => t.CreatedAt);
 
         var waiting = await waitingQuery.Take(50).ToListAsync(ct);
 
@@ -102,9 +104,12 @@ public class CounterService : ICounterService
                 .Where(t => t.Status == TokenStatus.WAITING && serviceIds.Contains(t.ServiceId));
 
             if (priorityEnabled)
-                query = query.OrderByDescending(t => t.Priority != TokenPriority.STANDARD).ThenBy(t => t.CreatedAt);
+                query = query.OrderByDescending(t => t.Priority != TokenPriority.STANDARD)
+                    .ThenBy(t => t.QueuedAt ?? t.CreatedAt)
+                    .ThenBy(t => t.CreatedAt);
             else
-                query = query.OrderBy(t => t.CreatedAt);
+                query = query.OrderBy(t => t.QueuedAt ?? t.CreatedAt)
+                    .ThenBy(t => t.CreatedAt);
 
             var token = await query.FirstOrDefaultAsync(ct);
             if (token == null) return null;

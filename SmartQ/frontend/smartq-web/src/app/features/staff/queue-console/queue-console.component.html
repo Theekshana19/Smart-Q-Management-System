@@ -1,0 +1,135 @@
+<div class="error-card" *ngIf="state.error()">
+  {{ state.error() }}
+  <button type="button" (click)="state.loadAll()">Retry</button>
+</div>
+
+<main class="queue-page" *ngIf="!state.error() && state.summary() as s">
+  <section class="counter-test glass-card" *ngIf="counters().length > 0">
+    <div>
+      <h4>Testing Only: Queue Counter Switch</h4>
+      <p>Use this temporary dropdown to verify each counter sees only relevant tokens.</p>
+      <div class="assigned-services" *ngIf="state.context() as ctx">
+        <span class="label">Assigned services (from DB):</span>
+        <ng-container *ngIf="ctx.assignedServices.length > 0; else noneAssigned">
+          <span class="chip" *ngFor="let s of ctx.assignedServices">{{ s.code }} - {{ s.name }}</span>
+        </ng-container>
+        <ng-template #noneAssigned>
+          <span class="none">No active services assigned to this counter.</span>
+        </ng-template>
+      </div>
+    </div>
+    <select [value]="state.counterId()" (change)="onCounterChange($event)">
+      <option *ngFor="let c of counters()" [value]="c.id">
+        Counter {{ c.counterNo }} - {{ c.counterName }}
+      </option>
+    </select>
+  </section>
+
+  <section class="summary-grid">
+    <article class="glass-card mini">
+      <div>
+        <p>Waiting</p>
+        <h3>{{ s.waiting }}</h3>
+      </div>
+      <span class="material-symbols-outlined">group</span>
+    </article>
+    <article class="glass-card mini">
+      <div>
+        <p>Served Today</p>
+        <h3>{{ s.servedToday }}</h3>
+      </div>
+      <span class="material-symbols-outlined">check_circle</span>
+    </article>
+    <article class="glass-card mini">
+      <div>
+        <p>Avg Wait</p>
+        <h3>{{ s.avgWaitMinutes }} <small>min</small></h3>
+      </div>
+      <span class="material-symbols-outlined">timer</span>
+    </article>
+  </section>
+
+  <section class="workspace">
+    <article class="glass-card session" *ngIf="active(); else emptyActive">
+      <header>
+        <div>
+          <h2>Active Session</h2>
+          <p>{{ state.msg('STAFF_COUNTER_SERVES_MESSAGE', 'Currently serving token in selected counter') }}</p>
+        </div>
+        <span class="session-pill">{{ active()?.status === 'SERVING' ? 'In Progress' : active()?.status }}</span>
+      </header>
+
+      <div class="token-core">
+        <span class="label">Token Number</span>
+        <h1>{{ active()?.tokenNo }}</h1>
+      </div>
+
+      <div class="meta-grid">
+        <div>
+          <p>Service Type</p>
+          <strong>{{ active()?.subServiceName }}</strong>
+        </div>
+        <div class="right">
+          <p>Elapsed Time</p>
+          <strong>{{ elapsedDisplay() }}</strong>
+        </div>
+      </div>
+
+      <div class="btn-grid">
+        <button class="primary" type="button" (click)="complete()" [disabled]="actionBusy() || !(active()?.status === 'SERVING' || active()?.status === 'CALLED')">Complete Service</button>
+        <button class="danger-soft" type="button" (click)="noShow()" [disabled]="actionBusy() || active()?.status !== 'CALLED'">No Show</button>
+      </div>
+      <div class="btn-grid">
+        <button type="button" (click)="recall()" [disabled]="actionBusy()">Recall</button>
+        <button type="button" (click)="transfer()" [disabled]="actionBusy()">Transfer</button>
+      </div>
+    </article>
+
+    <ng-template #emptyActive>
+      <article class="glass-card empty-state">
+        <h2>{{ state.msg('STAFF_EMPTY_QUEUE_TITLE', 'No active token') }}</h2>
+        <p>{{ state.msg('STAFF_EMPTY_QUEUE_DESCRIPTION', 'The counter is currently idle. Click Call Next to serve the next customer in the priority queue.') }}</p>
+      </article>
+    </ng-template>
+
+    <aside class="right-rail">
+      <section class="glass-card queue-control">
+        <p>Queue Control</p>
+        <button class="call-next" type="button" (click)="callNext()" [disabled]="actionBusy() || state.callNextDisabled() || queue().length===0">
+          <span class="material-symbols-outlined">arrow_forward</span>
+          <span>Call Next</span>
+        </button>
+        <div class="next-line">
+          <span>Next in line:</span>
+          <strong>{{ nextInLine() }}</strong>
+        </div>
+      </section>
+
+      <section class="glass-card queue-list">
+        <header>
+          <h3>Upcoming Queue</h3>
+          <span>{{ vipCount() }} VIP in line</span>
+        </header>
+        <table>
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Service</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let q of queue().slice(0, 8)">
+              <td>{{ q.tokenNo }}</td>
+              <td>{{ q.subServiceName }}</td>
+              <td>
+                <span class="status-chip" [class.vip]="q.priority==='VIP'">{{ q.priority === 'VIP' ? 'VIP' : q.status }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" class="view-all" (click)="state.loadAll()">View All ({{ queue().length }})</button>
+      </section>
+    </aside>
+  </section>
+</main>
