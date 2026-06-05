@@ -12,7 +12,10 @@ public class TokenConfiguration : IEntityTypeConfiguration<Token>
         builder.Property(t => t.TokenNo).HasMaxLength(20).IsRequired();
         builder.Property(t => t.TokenPrefix).HasMaxLength(10).IsRequired();
         builder.Property(t => t.TransferredFromTokenNo).HasMaxLength(20);
-        builder.HasIndex(t => t.TokenNo).IsUnique().HasDatabaseName("IX_Tokens_TokenNo");
+        builder.HasIndex(t => t.TokenNo).HasDatabaseName("IX_Tokens_TokenNo");
+        builder.HasIndex(t => new { t.SubServiceId, t.SequenceDate, t.SequenceNo })
+            .IsUnique()
+            .HasDatabaseName("IX_Tokens_SubServiceId_SequenceDate_SequenceNo");
         builder.HasIndex(t => new { t.Status, t.QueuedAt }).HasDatabaseName("IX_Tokens_Status_QueuedAt");
         builder.HasIndex(t => new { t.Status, t.CreatedAt }).HasDatabaseName("IX_Tokens_Status_CreatedAt");
         builder.HasIndex(t => new { t.ServiceId, t.Status, t.CreatedAt }).HasDatabaseName("IX_Tokens_ServiceId_Status_CreatedAt");

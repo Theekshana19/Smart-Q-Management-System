@@ -45,15 +45,6 @@
 .online.off { color: #ba1a1a; background: #ffdad6; border-color: #ffdad6; }
 .dot { width: 8px; height: 8px; border-radius: 999px; background: #006a66; animation: pulse 1.5s infinite; }
 .online.off .dot { background: #ba1a1a; }
-.break-btn {
-  padding: 6px 16px;
-  border-radius: 8px;
-  border: 1px solid #c6c6cd;
-  background: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
 .icon-btn {
   position: relative;
   width: 40px;

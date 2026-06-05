@@ -1,30 +1,190 @@
-<div class="page">
-  <h1>Token History & Analytics</h1>
-  <div class="filters card">
-    <span>Date Range</span><span>Service Type</span><span>Counter</span><span>Status</span>
-    <button class="btn-primary">Apply Filters</button>
-  </div>
-  @if (report(); as r) {
-    <div class="kpi-grid">
-      <div class="kpi card"><span>Total Tokens Issued</span><strong>{{ r['totalIssued'] }}</strong></div>
-      <div class="kpi card"><span>Completed Services</span><strong>{{ r['completed'] }}</strong></div>
-      <div class="kpi card"><span>Avg Wait Time</span><strong>{{ $any(r['avgWaitMinutes']) | number:'1.0-1' }}m</strong></div>
+<div class="admin-page">
+  <!-- Page Header -->
+  <div class="page-head">
+    <div>
+      <h2 class="page-title">Token History &amp; Analytics</h2>
+      <p class="page-subtitle">Filter, analyze, and export token activity and queue performance data.</p>
     </div>
-    <div class="table-card card">
-      <table>
-        <thead><tr><th>Token No</th><th>Service</th><th>Counter</th><th>Created</th><th>Status</th></tr></thead>
+    <div class="head-actions">
+      <button class="btn-export-csv" type="button" (click)="exportCsv()">
+        <span class="material-symbols-outlined">table_chart</span>
+        Export CSV
+      </button>
+      <button class="btn-export-pdf" type="button" (click)="exportPdf()">
+        <span class="material-symbols-outlined">picture_as_pdf</span>
+        PDF Report
+      </button>
+    </div>
+  </div>
+
+  <app-admin-error-banner [message]="errorMsg()" [status]="errorStatus()" (retry)="applyFilters()" />
+
+  <div class="filters-card">
+    <div class="filter-group">
+      <label class="filter-label">Date From</label>
+      <input type="date" class="filter-input" [(ngModel)]="dateFrom" />
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Date To</label>
+      <input type="date" class="filter-input" [(ngModel)]="dateTo" />
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Service Type</label>
+      <select class="filter-select" [(ngModel)]="selectedServiceId">
+        <option [ngValue]="undefined">All Services</option>
+        @for (svc of services(); track svc.id) {
+          <option [ngValue]="svc.id">{{ svc.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Status</label>
+      <select class="filter-select" [(ngModel)]="selectedStatus">
+        <option [ngValue]="undefined">All Statuses</option>
+        <option value="WAITING">Waiting</option>
+        <option value="CALLED">Called</option>
+        <option value="SERVING">Serving</option>
+        <option value="COMPLETED">Completed</option>
+        <option value="SKIPPED">Skipped</option>
+        <option value="ABANDONED">Abandoned</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn-apply" type="button" (click)="applyFilters()">
+        <span class="material-symbols-outlined">filter_list</span>
+        Apply Filters
+      </button>
+      <button class="btn-reset" type="button" (click)="resetFilters()">
+        <span class="material-symbols-outlined">restart_alt</span>
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="page-loading">Loading report data…</div>
+  } @else if (report(); as r) {
+
+    @if (summary(); as s) {
+    <div class="summary-row">
+      <div class="sum-card">
+        <div class="sum-icon green"><span class="material-symbols-outlined">confirmation_number</span></div>
+        <div class="sum-text">
+          <p class="sum-label">Total Tokens</p>
+          <h4 class="sum-val">{{ s.totalTokens | number }}</h4>
+        </div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-icon navy"><span class="material-symbols-outlined">task_alt</span></div>
+        <div class="sum-text">
+          <p class="sum-label">Completed</p>
+          <h4 class="sum-val">{{ s.completed | number }}</h4>
+        </div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-icon teal"><span class="material-symbols-outlined">schedule</span></div>
+        <div class="sum-text">
+          <p class="sum-label">Avg. Wait</p>
+          <h4 class="sum-val">{{ s.averageWaitMinutes | number:'1.1-1' }}m</h4>
+        </div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-icon surface"><span class="material-symbols-outlined">analytics</span></div>
+        <div class="sum-text">
+          <p class="sum-label">Skipped</p>
+          <h4 class="sum-val">{{ s.skipped | number }}</h4>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Token History Table -->
+    <div class="table-card">
+      <div class="table-title-row">
+        <h4 class="section-title">Token History</h4>
+        <span class="row-count">{{ totalCount() }} Records</span>
+      </div>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Token No</th>
+            <th>Service</th>
+            <th>Sub-Service</th>
+            <th>Counter</th>
+            <th>Created At</th>
+            <th>Wait Time</th>
+            <th>Status</th>
+          </tr>
+        </thead>
         <tbody>
-          @for (row of $any(r['rows']); track row.id) {
+          @for (row of rows(); track row.id) {
             <tr>
-              <td>{{ row.tokenNo }}</td>
-              <td>{{ row.serviceName }} / {{ row.subServiceName }}</td>
-              <td>{{ row.counterName ?? '-' }}</td>
-              <td>{{ row.createdAt | date:'short' }}</td>
-              <td>{{ row.status }}</td>
+              <td class="token-no">{{ row.tokenNo }}</td>
+              <td>{{ row.serviceName }}</td>
+              <td class="sub-svc">{{ row.subServiceName }}</td>
+              <td>{{ row.counterName ?? '--' }}</td>
+              <td class="date-cell">{{ row.createdAt | date:'dd MMM, HH:mm' }}</td>
+              <td>{{ waitTime(row) }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="statusClass(row.status)">{{ row.status }}</span>
+              </td>
             </tr>
           }
         </tbody>
       </table>
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button type="button" class="page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+          @for (p of pages(); track p) {
+            <button type="button" class="page-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">{{ p }}</button>
+          }
+          <button type="button" class="page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
+      }
     </div>
+
+    <!-- Analytics Row -->
+    <div class="analytics-row">
+      <!-- Traffic Distribution -->
+      <div class="analytics-card">
+        <h4 class="section-title">Traffic Distribution</h4>
+        <p class="analytics-sub">{{ r.peakHoursSummary }}</p>
+
+        <div class="traffic-bars">
+          @for (pt of r.trafficDistribution; track pt.hourLabel) {
+            <div class="traffic-col">
+              <span class="traffic-count">{{ pt.count }}</span>
+              <div class="traffic-bar-track">
+                <div class="traffic-bar-fill" [style.height.%]="pt.percent"></div>
+              </div>
+              <span class="traffic-label">{{ pt.hourLabel }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Operational Insights -->
+      <div class="analytics-card insights-card">
+        <h4 class="section-title">Operational Insights</h4>
+        <p class="analytics-sub">System analysis and actionable recommendations.</p>
+
+        <div class="insights-list">
+          @for (insight of r.insights; track insight.text) {
+            <div class="insight-item" [ngClass]="insightClass(insight.tone)">
+              <div class="insight-icon-wrap">
+                <span class="material-symbols-outlined">{{ insight.icon }}</span>
+              </div>
+              <p class="insight-text">{{ insight.text }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
   }
 </div>

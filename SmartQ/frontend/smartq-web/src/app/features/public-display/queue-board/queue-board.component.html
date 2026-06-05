@@ -2,7 +2,7 @@
   <header class="display-header">
     <div class="brand">
       <span class="material-symbols-outlined">layers</span>
-      <h1>SmartQ Bank Queue Display</h1>
+      <h1>{{ branchName() }} Queue Display</h1>
     </div>
     <div class="meta">
       <span class="live-clock">
@@ -17,7 +17,7 @@
     <main class="display-main">
       <section class="primary">
         <div class="now-serving" [class.flash]="flash()">
-          <span class="label"><span class="material-symbols-outlined">campaign</span> NOW SERVING</span>
+          <span class="label"><span class="material-symbols-outlined">campaign</span> {{ nowServingLabel() }}</span>
           <span class="token">{{ b.nowServing?.tokenNo ?? '---' }}</span>
           <span class="counter-pill">{{ b.nowServing?.counterName ?? 'Please Wait' }}</span>
         </div>
@@ -27,7 +27,7 @@
         <div class="wait-head">
           <span class="material-symbols-outlined">groups</span>
           <div>
-            <h2>Waiting Queue</h2>
+            <h2>{{ waitingQueueLabel() }}</h2>
             <p class="expected-wait">
               <span class="material-symbols-outlined">timer</span>
               Expected wait: <strong>~{{ b.waitingQueue.expectedWaitMinutes }} min</strong>
@@ -62,8 +62,8 @@
         </div>
 
         <div class="promo">
-          <strong>SMART MOBILE BANKING</strong>
-          <p>Scan QR on your receipt to track your turn live.</p>
+          <strong>{{ promoTitle() }}</strong>
+          <p>{{ promoText() }}</p>
         </div>
       </aside>
     </main>

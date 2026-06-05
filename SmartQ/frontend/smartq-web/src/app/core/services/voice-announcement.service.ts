@@ -16,7 +16,8 @@ export class VoiceAnnouncementService {
     }
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
+    const code = (template?.languageCode ?? 'EN').toUpperCase();
+    utterance.lang = code === 'SI' ? 'si-LK' : code === 'TA' ? 'ta-LK' : 'en-US';
     utterance.rate = 0.9;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);

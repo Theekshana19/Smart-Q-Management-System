@@ -1,0 +1,17 @@
+.admin-page { display: flex; flex-direction: column; gap: 16px; }
+.page-title { font-size: 28px; font-weight: 700; }
+.page-subtitle { color: #45464d; font-size: 15px; }
+.warning-box { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: rgba(0,106,102,.06); border-radius: 8px; color: #006a66; font-size: 14px; }
+.success-msg { padding: 10px 16px; background: rgba(129,242,235,.3); border-radius: 8px; color: #006f6a; font-size: 14px; }
+.assignment-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; min-height: 400px; }
+.counter-list, .service-checklist { background: #fff; border-radius: 12px; border: 1px solid #f1f5f9; padding: 16px; }
+.counter-list h4, .service-checklist h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+.counter-item { display: flex; flex-direction: column; align-items: flex-start; width: 100%; padding: 12px; border: 1px solid #e5eeff; border-radius: 8px; background: #fff; cursor: pointer; margin-bottom: 8px; text-align: left;
+  &.active { border-color: #006a66; background: rgba(0,106,102,.04); }
+  span { font-size: 13px; color: #45464d; } small { font-size: 11px; color: #76777d; } }
+.check-row { display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer;
+  input { margin-top: 4px; } .check-info { display: flex; flex-direction: column; gap: 2px; }
+  .code { font-family: monospace; font-size: 12px; color: #45464d; }
+  .prefixes { font-size: 11px; color: #006a66; } }
+.btn-save { margin-top: 16px; padding: 10px 24px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.empty { color: #45464d; font-size: 14px; padding: 16px; }

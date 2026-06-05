@@ -1,0 +1,95 @@
+<app-admin-error-banner
+  *ngIf="errorMsg()"
+  [message]="errorMsg()"
+  [status]="errorStatus()"
+  (retry)="load()" />
+
+<section class="page-header">
+  <div>
+    <h1>Staff Management</h1>
+    <p>Manage staff accounts, roles, and active counter sessions.</p>
+  </div>
+  <button type="button" class="primary" (click)="openCreate()">+ Add Staff</button>
+</section>
+
+<div class="summary-grid" *ngIf="summary() as s">
+  <article><span>Total Staff</span><strong>{{ s.totalStaff }}</strong></article>
+  <article><span>Active Staff</span><strong>{{ s.activeStaff }}</strong></article>
+  <article><span>Online Now</span><strong>{{ s.onlineNow }}</strong></article>
+  <article><span>Admin Users</span><strong>{{ s.adminUsers }}</strong></article>
+</div>
+
+<div class="toolbar">
+  <input type="search" placeholder="Search staff..." [ngModel]="search()" (ngModelChange)="search.set($event)" (keyup.enter)="load()" />
+  <button type="button" (click)="load()">Apply</button>
+</div>
+
+<p *ngIf="loading()">Loading staff...</p>
+
+<table *ngIf="!loading() && !errorMsg()">
+  <thead>
+    <tr>
+      <th>Staff Name</th>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Role</th>
+      <th>Status</th>
+      <th>Current Counter</th>
+      <th>Session</th>
+      <th>Served Today</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let item of staff()">
+      <td>{{ item.fullName }}</td>
+      <td>{{ item.username }}</td>
+      <td>{{ item.email }}</td>
+      <td>{{ item.role }}</td>
+      <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
+      <td>{{ item.activeCounterName ?? '—' }}</td>
+      <td>{{ item.sessionStatus ?? '—' }}</td>
+      <td>{{ item.servedToday }}</td>
+      <td class="actions">
+        <button type="button" (click)="openEdit(item)">Edit</button>
+        <button type="button" (click)="openReset(item)">Reset Password</button>
+        <button type="button" (click)="toggleStatus(item)">{{ item.isActive ? 'Deactivate' : 'Activate' }}</button>
+        <button type="button" *ngIf="item.sessionStatus" (click)="forceLogout(item)">Force Logout</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="modal-backdrop" *ngIf="modalOpen()">
+  <div class="modal">
+    <h2>{{ editItem() ? 'Edit Staff' : 'Add Staff' }}</h2>
+    <p class="modal-error" *ngIf="modalError()">{{ modalError() }}</p>
+    <label>Full Name <input [(ngModel)]="form.fullName" /></label>
+    <label>Username <input [(ngModel)]="form.username" /></label>
+    <label>Email <input [(ngModel)]="form.email" /></label>
+    <label *ngIf="!editItem()">Password <input type="password" [(ngModel)]="form.password" /></label>
+    <label>Role
+      <select [(ngModel)]="form.role">
+        <option value="STAFF">STAFF</option>
+        <option value="ADMIN">ADMIN</option>
+      </select>
+    </label>
+    <label><input type="checkbox" [(ngModel)]="form.isActive" /> Active</label>
+    <div class="modal-actions">
+      <button type="button" (click)="modalOpen.set(false)">Cancel</button>
+      <button type="button" class="primary" [disabled]="saving()" (click)="save()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="resetOpen()">
+  <div class="modal">
+    <h2>Reset Password</h2>
+    <p class="modal-error" *ngIf="modalError()">{{ modalError() }}</p>
+    <label>New Password <input type="password" [(ngModel)]="resetPassword" /></label>
+    <div class="modal-actions">
+      <button type="button" (click)="resetOpen.set(false)">Cancel</button>
+      <button type="button" class="primary" [disabled]="saving()" (click)="submitReset()">Reset</button>
+    </div>
+  </div>
+</div>

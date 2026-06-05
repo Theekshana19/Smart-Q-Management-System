@@ -1,0 +1,107 @@
+@if (open()) {
+  <div class="drawer-overlay" (click)="onClose()">
+    <aside class="drawer-panel" (click)="$event.stopPropagation()">
+      <header class="drawer-header">
+        <div class="header-left">
+          <button type="button" class="close-btn" (click)="onClose()" aria-label="Close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+          <h2 class="drawer-title">Token Details</h2>
+        </div>
+        @if (details(); as d) {
+          <span class="priority-badge" [class.vip]="isVip(d.priority)">
+            {{ priorityLabel(d.priority) }}
+          </span>
+        }
+      </header>
+
+      @if (loading()) {
+        <div class="drawer-loading">Loading token details…</div>
+      } @else if (details(); as d) {
+        <div class="drawer-content custom-scrollbar">
+          <div class="token-hero">
+            <div class="hero-glow hero-glow-a"></div>
+            <div class="hero-glow hero-glow-b"></div>
+            <p class="hero-label">Current Token</p>
+            <h1 class="hero-token">{{ d.tokenNo }}</h1>
+            <div class="status-pill">
+              <span class="status-dot"></span>
+              <span>Status: {{ formatStatus(d.status) }}</span>
+            </div>
+          </div>
+
+          <div class="details-grid">
+            <div>
+              <p class="field-label">Service Type</p>
+              <p class="field-value">{{ d.subService }}</p>
+            </div>
+            <div>
+              <p class="field-label">Preferred Language</p>
+              <p class="field-value">{{ d.preferredLanguage }}</p>
+            </div>
+            <div>
+              <p class="field-label">Created Time</p>
+              <p class="field-value">{{ formatCreatedTime(d.createdTime) }}</p>
+            </div>
+            <div>
+              <p class="field-label">Queue Position</p>
+              <p class="field-value strong">#{{ queuePositionLabel(d.queuePosition) }}</p>
+            </div>
+          </div>
+
+          @if (d.customerName) {
+            <div class="customer-card">
+              <div class="customer-avatar">
+                <span class="material-symbols-outlined filled">person</span>
+              </div>
+              <div>
+                <p class="customer-name">{{ d.customerName }}</p>
+                @if (d.customerSubtitle) {
+                  <p class="customer-subtitle">{{ d.customerSubtitle }}</p>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="journey-section">
+            <p class="journey-title">Token Journey</p>
+            @if (d.journey.length === 0) {
+              <p class="journey-empty">No journey events recorded yet.</p>
+            } @else {
+              <div class="journey-track">
+                @for (step of d.journey; track step.changedAt + step.title; let first = $first) {
+                  <div class="journey-step">
+                    <span class="journey-dot" [class.active]="first"></span>
+                    <div>
+                      <p class="step-title" [class.muted]="!first">{{ step.title }}</p>
+                      <p class="step-subtitle">{{ step.subtitle }}</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (showActions() && canAct(d.status)) {
+          <footer class="drawer-footer">
+            <div class="footer-row">
+              <button type="button" class="action-btn" (click)="onRecall()" [disabled]="!canRecall(d.status)">
+                <span class="material-symbols-outlined">replay</span>
+                Recall
+              </button>
+              <button type="button" class="action-btn" (click)="onTransfer()" [disabled]="!canTransfer(d.status)">
+                <span class="material-symbols-outlined">move_item</span>
+                Transfer
+              </button>
+            </div>
+            <button type="button" class="cancel-btn" (click)="onCancel()" [disabled]="!canCancel(d.status)">
+              <span class="material-symbols-outlined">cancel</span>
+              Cancel Token
+            </button>
+          </footer>
+        }
+      }
+    </aside>
+  </div>
+}

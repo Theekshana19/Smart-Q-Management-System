@@ -154,11 +154,28 @@ const LABELS: Record<KioskLang, KioskLabels> = {
   }
 };
 
+const DB_MESSAGE_KEYS: Partial<Record<keyof KioskLabels, string>> = {
+  selectServiceTitle: 'KIOSK_SELECT_SERVICE_TITLE',
+  selectServiceSub: 'KIOSK_SELECT_SERVICE_SUBTITLE',
+  tokenReady: 'TOKEN_SUCCESS_TITLE',
+  tokenReadySub: 'TOKEN_SUCCESS_INSTRUCTION'
+};
+
 @Injectable({ providedIn: 'root' })
 export class KioskI18nService {
-  labels(code: string): KioskLabels {
+  labels(code: string, messageLookup?: (key: string, fallback: string) => string): KioskLabels {
     const key = (code?.toUpperCase() ?? 'EN') as KioskLang;
-    return LABELS[key] ?? LABELS.EN;
+    const base = { ...(LABELS[key] ?? LABELS.EN) };
+    if (!messageLookup) return base;
+
+    for (const [labelKey, messageKey] of Object.entries(DB_MESSAGE_KEYS)) {
+      const k = labelKey as keyof KioskLabels;
+      const fb = base[k];
+      if (typeof fb === 'string' && messageKey) {
+        base[k] = messageLookup(messageKey, fb) as KioskLabels[typeof k];
+      }
+    }
+    return base;
   }
 
   format(text: string, params: Record<string, string>): string {

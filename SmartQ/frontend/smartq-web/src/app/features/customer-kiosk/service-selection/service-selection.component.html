@@ -32,8 +32,8 @@
             <span class="badge">{{ labels.liveStatus }}</span>
           </div>
           <h3>{{ labels.waitTimes }}</h3>
-          <p>{{ labels.waitTimesDesc }}</p>
-          <div class="staff-row"><span>{{ labels.staffActive }}</span></div>
+          <p>{{ waitTimesDesc() }}</p>
+          <div class="staff-row"><span>{{ staffActiveLabel() }}</span></div>
         </div>
       </div>
     }

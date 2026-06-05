@@ -16,6 +16,7 @@ public class SmartQDbContext : DbContext
     public DbSet<Counter> Counters => Set<Counter>();
     public DbSet<CounterServiceAssignment> CounterServiceAssignments => Set<CounterServiceAssignment>();
     public DbSet<StaffUser> StaffUsers => Set<StaffUser>();
+    public DbSet<StaffCounterSession> StaffCounterSessions => Set<StaffCounterSession>();
     public DbSet<Token> Tokens => Set<Token>();
     public DbSet<DailyTokenSequence> DailyTokenSequences => Set<DailyTokenSequence>();
     public DbSet<TokenStatusHistory> TokenStatusHistories => Set<TokenStatusHistory>();

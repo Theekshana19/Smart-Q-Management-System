@@ -1,0 +1,54 @@
+<div class="admin-page">
+  <div class="page-head">
+    <div>
+      <h2 class="page-title">Counter-Service Assignments</h2>
+      <p class="page-subtitle">Changing assignments affects which tokens staff can call.</p>
+    </div>
+  </div>
+
+  <div class="warning-box">
+    <span class="material-symbols-outlined">warning</span>
+    Changing assignments affects which tokens staff can call at each counter.
+  </div>
+
+  <app-admin-error-banner [message]="errorMsg()" [status]="errorStatus()" (retry)="loadCounters()" />
+
+  @if (saveMsg()) { <div class="success-msg">{{ saveMsg() }}</div> }
+
+  <div class="assignment-layout">
+    <aside class="counter-list">
+      <h4>Counters</h4>
+      @for (c of counters(); track c.counterId) {
+        <button type="button" class="counter-item" [class.active]="selectedCounterId() === c.counterId" (click)="selectCounter(c.counterId)">
+          <strong>Counter {{ c.counterNo }}</strong>
+          <span>{{ c.counterName }}</span>
+          <small>{{ c.assignedServiceNames.length }} service(s)</small>
+        </button>
+      }
+      @if (!loading() && counters().length === 0) { <p class="empty">No counters found.</p> }
+    </aside>
+
+    <section class="service-checklist">
+      @if (selectedCounterId()) {
+        <h4>Assignable Services</h4>
+        @for (svc of assignable(); track svc.id) {
+          <label class="check-row">
+            <input type="checkbox" [checked]="isChecked(svc.id)" (change)="toggleService(svc.id)" />
+            <div class="check-info">
+              <strong>{{ svc.name }}</strong>
+              <span class="code">{{ svc.code }}</span>
+              @if (svc.tokenPrefixes.length) {
+                <span class="prefixes">Prefixes: {{ svc.tokenPrefixes.join(', ') }}</span>
+              }
+            </div>
+          </label>
+        }
+        <button type="button" class="btn-save" [disabled]="saving()" (click)="save()">
+          {{ saving() ? 'Saving…' : 'Save Assignment' }}
+        </button>
+      } @else {
+        <p class="empty">Select a counter to manage assignments.</p>
+      }
+    </section>
+  </div>
+</div>

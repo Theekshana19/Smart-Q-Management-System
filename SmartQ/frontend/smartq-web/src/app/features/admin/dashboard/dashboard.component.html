@@ -1,27 +1,226 @@
-<div class="page">
-  <div class="page-head">
-    <div>
-      <h1>Dashboard Overview</h1>
-      <p>Real-time operational health and customer flow analysis.</p>
-    </div>
-    <div class="actions">
-      <button class="btn-filter">Last 24 Hours</button>
-      <button class="btn-export">Export Report</button>
-    </div>
-  </div>
+<div class="admin-page">
+  <app-admin-error-banner [message]="errorMsg()" [status]="errorStatus()" (retry)="load()" />
 
-  @if (data(); as d) {
-    <div class="kpi-grid">
-      <div class="kpi card"><span>Active Tokens</span><strong>{{ d['activeTokens'] }}</strong></div>
-      <div class="kpi card"><span>Avg. Wait Time</span><strong>{{ d['avgWaitMinutes'] }}m</strong></div>
-      <div class="kpi card"><span>Staff Online</span><strong>{{ d['staffOnline'] }}/{{ d['staffTotal'] }}</strong></div>
-      <div class="kpi card dark"><span>Satisfaction Rate</span><strong>4.9/5.0</strong></div>
+  @if (loading()) {
+    <div class="page-loading">Loading dashboard…</div>
+  } @else if (data(); as d) {
+
+    <!-- Page Header -->
+    <div class="page-head">
+      <div>
+        <h2 class="page-title">Dashboard Overview</h2>
+        <p class="page-subtitle">Real-time operational health and customer flow analysis.</p>
+      </div>
+      <div class="head-actions">
+        <button class="btn-filter" type="button">
+          <span class="material-symbols-outlined">calendar_month</span>
+          Last 24 Hours
+        </button>
+        <button class="btn-export" type="button">
+          <span class="material-symbols-outlined">file_download</span>
+          Export Report
+        </button>
+      </div>
     </div>
-    <div class="charts">
-      <div class="card chart-placeholder">Hourly Customer Flow (from API)</div>
-      <div class="card chart-placeholder">Token Distribution (from API)</div>
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <!-- Active Tokens -->
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon green"><span class="material-symbols-outlined">people</span></div>
+          <span class="kpi-trend positive">
+            <span class="material-symbols-outlined">trending_up</span>
+            {{ formatTrend(d.activeTokensTrendPercent) }}
+          </span>
+        </div>
+        <p class="kpi-label">Active Tokens</p>
+        <h3 class="kpi-value">{{ d.activeTokens | number }}</h3>
+        <div class="progress-track"><div class="progress-fill green" style="width: 75%"></div></div>
+      </div>
+
+      <!-- Avg Wait Time -->
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon navy"><span class="material-symbols-outlined">schedule</span></div>
+          <span class="kpi-trend" [class.positive]="d.waitTrendMinutes <= 0" [class.negative]="d.waitTrendMinutes > 0">
+            <span class="material-symbols-outlined">{{ d.waitTrendMinutes <= 0 ? 'trending_down' : 'trending_up' }}</span>
+            {{ avgWaitTrendLabel(d.waitTrendMinutes) }}
+          </span>
+        </div>
+        <p class="kpi-label">Avg. Wait Time</p>
+        <h3 class="kpi-value">{{ formatWait(d.avgWaitMinutes) }}</h3>
+        <div class="mini-bars">
+          <div class="bar" style="height: 4px"></div>
+          <div class="bar" style="height: 6px"></div>
+          <div class="bar" style="height: 3px"></div>
+          <div class="bar" style="height: 8px"></div>
+          <div class="bar tall"></div>
+        </div>
+      </div>
+
+      <!-- Staff Online -->
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon surface"><span class="material-symbols-outlined">verified_user</span></div>
+          <span class="kpi-badge">Live</span>
+        </div>
+        <p class="kpi-label">Staff Online</p>
+        <h3 class="kpi-value">{{ d.staffOnline }}/{{ d.staffTotal }}</h3>
+        <div class="avatar-stack">
+          <div class="av blue"></div>
+          <div class="av green"></div>
+          <div class="av purple"></div>
+          <div class="av more">+{{ d.staffOnline > 3 ? d.staffOnline - 3 : 0 }}</div>
+        </div>
+      </div>
+
+      <!-- Satisfaction Rate -->
+      <div class="kpi-card dark">
+        <div class="kpi-top">
+          <div class="kpi-icon dark-icon"><span class="material-symbols-outlined">stars</span></div>
+          <span class="kpi-badge-light">Peak</span>
+        </div>
+        <p class="kpi-label-light">Satisfaction Rate</p>
+        <h3 class="kpi-value-light">{{ satisfactionLabel(d.satisfactionRate) }}</h3>
+        <div class="star-row">
+          @for (s of staffStars(d.satisfactionRate); track $index) {
+            <span class="material-symbols-outlined star-icon" [style.font-variation-settings]="'FILL 1'">{{ s }}</span>
+          }
+        </div>
+      </div>
     </div>
-  } @else {
-    <p class="loading">Loading dashboard...</p>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <!-- Hourly Customer Flow -->
+      <div class="chart-card main-chart">
+        <div class="chart-header">
+          <h4 class="section-title">Hourly Customer Flow</h4>
+          <div class="legend">
+            <div class="legend-item">
+              <span class="dot green-dot"></span><span>General</span>
+            </div>
+            <div class="legend-item">
+              <span class="dot navy-dot"></span><span>Priority</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bar-chart-wrap">
+          <div class="bar-chart">
+            @for (bar of chartBars(); track bar.hour) {
+              <div class="chart-col">
+                <div class="bar-stack">
+                  <div class="seg priority-seg" [style.height.%]="bar.priorityPct"></div>
+                  <div class="seg general-seg" [style.height.%]="bar.generalPct"></div>
+                </div>
+                <span class="bar-label">{{ bar.hour }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Token Distribution Donut -->
+      <div class="chart-card donut-card">
+        <h4 class="section-title">Token Distribution</h4>
+        <div class="donut-wrap">
+          <div class="donut" [style.background]="donutConicGradient()">
+            <div class="donut-center">
+              <span class="donut-pct">{{ processedPercent() }}%</span>
+              <span class="donut-sub">Processed</span>
+            </div>
+          </div>
+          <div class="dist-legend">
+            @for (item of d.tokenDistribution; track item.category) {
+              <div class="dist-row">
+                <div class="dist-left">
+                  <span class="dist-dot" [style.background]="item.color"></span>
+                  <span>{{ item.category }}</span>
+                </div>
+                <strong>{{ item.count }}</strong>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lower Section -->
+    <div class="lower-row">
+      <!-- Recent Activity Feed -->
+      <div class="activity-card">
+        <div class="card-header">
+          <h4 class="section-title">Recent Activity</h4>
+          <button class="btn-text" type="button">View All</button>
+        </div>
+        <div class="activity-list">
+          @for (item of d.recentActivity; track item.title) {
+            <div class="activity-item">
+              <span class="activity-dot" [ngClass]="activityDot(item.type)"></span>
+              <div>
+                <p class="activity-title">{{ item.title }}</p>
+                <p class="activity-desc">{{ item.description }}</p>
+                <p class="activity-time">{{ item.timeAgo }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Active Counter Status Table -->
+      <div class="counter-table-card">
+        <div class="card-header">
+          <h4 class="section-title">Active Counter Status</h4>
+          <div class="tab-pills">
+            <button type="button" class="tab-pill" [class.active]="activeTab() === 'all'" (click)="activeTab.set('all')">All Counters</button>
+            <button type="button" class="tab-pill" [class.active]="activeTab() === 'vip'" (click)="activeTab.set('vip')">VIP Only</button>
+          </div>
+        </div>
+
+        <table class="counter-table">
+          <thead>
+            <tr>
+              <th>Counter ID</th>
+              <th>Staff Member</th>
+              <th>Status</th>
+              <th>Load</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filteredCounters(); track row.counterId) {
+              <tr>
+                <td class="counter-id">{{ row.counterId }}</td>
+                <td>
+                  <div class="staff-cell">
+                    <div class="staff-avatar">{{ row.staffName.slice(0, 2).toUpperCase() }}</div>
+                    <span>{{ row.staffName }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="status-badge" [ngClass]="statusBadge(row.status)">
+                    {{ statusLabel(row.status) }}
+                  </span>
+                </td>
+                <td>
+                  <div class="load-cell">
+                    <div class="load-bar"><div class="load-fill" [style.width.%]="row.loadPercent"></div></div>
+                    <span>{{ row.loadPercent }}%</span>
+                  </div>
+                </td>
+                <td>
+                  <button type="button" class="action-btn">
+                    <span class="material-symbols-outlined">more_vert</span>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   }
 </div>

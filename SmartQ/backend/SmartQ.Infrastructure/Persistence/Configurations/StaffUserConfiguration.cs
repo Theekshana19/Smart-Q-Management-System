@@ -13,6 +13,7 @@ public class StaffUserConfiguration : IEntityTypeConfiguration<StaffUser>
         builder.Property(s => s.FullName).HasMaxLength(150).IsRequired();
         builder.Property(s => s.Email).HasMaxLength(200).IsRequired();
         builder.HasIndex(s => s.Username).IsUnique();
+        builder.HasIndex(s => s.Email).IsUnique();
         builder.HasIndex(s => s.CounterId);
     }
 }

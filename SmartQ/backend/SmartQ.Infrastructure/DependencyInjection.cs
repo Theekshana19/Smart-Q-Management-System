@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SmartQ.Application.Configuration;
 using SmartQ.Application.Interfaces;
 using SmartQ.Infrastructure.Persistence;
 using SmartQ.Infrastructure.Services;
@@ -11,6 +12,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+
         services.AddDbContext<SmartQDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
@@ -21,6 +24,11 @@ public static class DependencyInjection
         services.AddScoped<IStaffConsoleService, StaffConsoleService>();
         services.AddScoped<IDisplayService, DisplayService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IConfigurationService, ConfigurationService>();
+        services.AddScoped<IPasswordHashService, PasswordHashService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IStaffSessionService, StaffSessionService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         return services;
     }

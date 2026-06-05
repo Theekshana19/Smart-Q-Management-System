@@ -1,0 +1,55 @@
+<app-admin-error-banner *ngIf="errorMsg()" [message]="errorMsg()" [status]="errorStatus()" (retry)="load()" />
+
+<section class="page-header">
+  <div>
+    <h1>Language Master</h1>
+    <p>Manage kiosk and announcement languages.</p>
+  </div>
+  <button type="button" class="primary" (click)="openCreate()">+ Add Language</button>
+</section>
+
+<div class="summary-grid" *ngIf="summary() as s">
+  <article><span>Total Languages</span><strong>{{ s.totalLanguages }}</strong></article>
+  <article><span>Active Languages</span><strong>{{ s.activeLanguages }}</strong></article>
+  <article><span>Default Language</span><strong>{{ s.defaultLanguageCode ?? '—' }}</strong></article>
+</div>
+
+<p *ngIf="loading()">Loading languages...</p>
+
+<table *ngIf="!loading() && !errorMsg()">
+  <thead>
+    <tr><th>Code</th><th>Name</th><th>Native Name</th><th>Default</th><th>Status</th><th>Order</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let item of items()">
+      <td>{{ item.code }}</td>
+      <td>{{ item.name }}</td>
+      <td>{{ item.nativeName }}</td>
+      <td>{{ item.isDefault ? 'Yes' : 'No' }}</td>
+      <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
+      <td>{{ item.displayOrder }}</td>
+      <td class="actions">
+        <button type="button" (click)="openEdit(item)">Edit</button>
+        <button type="button" (click)="toggleStatus(item)">{{ item.isActive ? 'Disable' : 'Enable' }}</button>
+        <button type="button" (click)="remove(item)">Delete</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="modal-backdrop" *ngIf="modalOpen()">
+  <div class="modal">
+    <h2>{{ editItem() ? 'Edit Language' : 'Add Language' }}</h2>
+    <p class="modal-error" *ngIf="modalError()">{{ modalError() }}</p>
+    <label>Code <input [(ngModel)]="form.code" [disabled]="!!editItem()" /></label>
+    <label>Name <input [(ngModel)]="form.name" /></label>
+    <label>Native Name <input [(ngModel)]="form.nativeName" /></label>
+    <label>Display Order <input type="number" [(ngModel)]="form.displayOrder" /></label>
+    <label><input type="checkbox" [(ngModel)]="form.isDefault" /> Default</label>
+    <label><input type="checkbox" [(ngModel)]="form.isActive" /> Active</label>
+    <div class="modal-actions">
+      <button type="button" (click)="modalOpen.set(false)">Cancel</button>
+      <button type="button" class="primary" [disabled]="saving()" (click)="save()">Save</button>
+    </div>
+  </div>
+</div>

@@ -191,6 +191,24 @@ public class StaffConsoleService : IStaffConsoleService
     public Task<TokenActionResultDto?> NoShowAsync(int tokenId, int counterId, int? staffUserId = null, CancellationToken ct = default) =>
         UpdateStatusAsync(tokenId, counterId, staffUserId, TokenStatus.SKIPPED, [TokenStatus.CALLED], "TokenSkipped", "No show", ct, setSkippedAt: true, remarks: "No show");
 
+    public async Task<TokenActionResultDto?> CancelAsync(int tokenId, int counterId, int? staffUserId = null, CancellationToken ct = default)
+    {
+        var token = await _db.Tokens.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tokenId, ct);
+        if (token == null) return null;
+
+        if (token.Status is TokenStatus.WAITING)
+        {
+            var serviceIds = await GetAssignedServiceIdsAsync(counterId, ct);
+            if (!serviceIds.Contains(token.ServiceId))
+                return new TokenActionResultDto(false, "Token is not in this counter's assigned services.", null);
+            return await UpdateStatusAsync(tokenId, counterId, staffUserId, TokenStatus.CANCELLED,
+                [TokenStatus.WAITING], "TokenCancelled", "Token cancelled", ct, setCancelledAt: true, remarks: "Cancelled by staff", allowUnassignedCounter: true);
+        }
+
+        return await UpdateStatusAsync(tokenId, counterId, staffUserId, TokenStatus.CANCELLED,
+            [TokenStatus.CALLED, TokenStatus.SERVING], "TokenCancelled", "Token cancelled", ct, setCancelledAt: true, remarks: "Cancelled by staff");
+    }
+
     public async Task<TokenActionResultDto?> TransferAsync(int tokenId, StaffTransferTokenRequest request, int counterId, int? staffUserId = null, CancellationToken ct = default)
     {
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
@@ -219,6 +237,7 @@ public class StaffConsoleService : IStaffConsoleService
         var (nextSequenceNo, nextTokenNo) = await GetNextTokenForSubServiceAsync(sub.Id, sub.TokenPrefix, ct);
         token.TokenPrefix = sub.TokenPrefix;
         token.SequenceNo = nextSequenceNo;
+        token.SequenceDate = DateOnly.FromDateTime(DateTime.Today);
         token.TokenNo = nextTokenNo;
         var transferFlow = $"Transfer: {oldSubServiceName} -> {sub.Name}";
 
@@ -249,12 +268,33 @@ public class StaffConsoleService : IStaffConsoleService
         return new TokenActionResultDto(true, "Token transferred successfully.", await GetActiveSessionAsync(counterId, ct));
     }
 
-    public async Task<IReadOnlyList<StaffTokenHistoryItemDto>> GetTokenHistoryAsync(int counterId, DateTime? date, string? status, int? serviceId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<StaffTokenHistoryItemDto>> GetTokenHistoryAsync(
+        int counterId,
+        DateTime? date,
+        DateTime? dateFrom,
+        DateTime? dateTo,
+        string? status,
+        int? serviceId,
+        CancellationToken ct = default)
     {
-        var day = date?.Date ?? DateTime.Today;
-        var next = day.AddDays(1);
+        DateTime periodStart;
+        DateTime periodEnd;
+        if (dateFrom.HasValue && dateTo.HasValue)
+        {
+            periodStart = dateFrom.Value.Date;
+            periodEnd = dateTo.Value.Date.AddDays(1);
+            if (periodEnd <= periodStart)
+                periodEnd = periodStart.AddDays(1);
+        }
+        else
+        {
+            var day = date?.Date ?? DateTime.Today;
+            periodStart = day;
+            periodEnd = day.AddDays(1);
+        }
+
         var query = _db.Tokens.AsNoTracking().Include(t => t.Service)
-            .Where(t => t.CounterId == counterId && t.CreatedAt >= day && t.CreatedAt < next);
+            .Where(t => t.CounterId == counterId && t.CreatedAt >= periodStart && t.CreatedAt < periodEnd);
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<TokenStatus>(status, true, out var st)) query = query.Where(t => t.Status == st);
         if (serviceId.HasValue) query = query.Where(t => t.ServiceId == serviceId.Value);
 
@@ -271,34 +311,126 @@ public class StaffConsoleService : IStaffConsoleService
 
     public async Task<StaffPerformanceDto> GetPerformanceAsync(int? staffUserId, int counterId, string range, CancellationToken ct = default)
     {
-        var from = range.Equals("today", StringComparison.OrdinalIgnoreCase) ? DateTime.Today : DateTime.Today.AddDays(-7);
-        var served = await _db.Tokens.AsNoTracking().Where(t => t.CounterId == counterId && t.CompletedAt >= from).ToListAsync(ct);
-        var skipped = await _db.Tokens.AsNoTracking().CountAsync(t => t.CounterId == counterId && t.SkippedAt >= from, ct);
-        var avgSeconds = served.Where(t => t.StartedAt.HasValue && t.CompletedAt.HasValue)
-            .Select(t => (int)(t.CompletedAt!.Value - t.StartedAt!.Value).TotalSeconds).DefaultIfEmpty(0).Average();
-        var totalProcessed = served.Count + skipped;
-        var rate = totalProcessed == 0 ? 0 : Math.Round((decimal)served.Count / totalProcessed * 100, 2);
-        var completedHours = await _db.Tokens.AsNoTracking()
-            .Where(t => t.CounterId == counterId && t.CompletedAt >= from && t.CompletedAt.HasValue)
-            .Select(t => t.CompletedAt!.Value.Hour)
+        var isWeek = range.Equals("week", StringComparison.OrdinalIgnoreCase);
+        var periodStart = isWeek ? DateTime.Today.AddDays(-6) : DateTime.Today;
+        var periodEnd = DateTime.Today.AddDays(1);
+        var prevStart = isWeek ? DateTime.Today.AddDays(-13) : DateTime.Today.AddDays(-1);
+        var prevEnd = isWeek ? DateTime.Today.AddDays(-6) : DateTime.Today;
+
+        var staffName = staffUserId.HasValue
+            ? await _db.StaffUsers.AsNoTracking().Where(s => s.Id == staffUserId.Value).Select(s => s.FullName).FirstOrDefaultAsync(ct)
+            : await _db.StaffUsers.AsNoTracking().Where(s => s.CounterId == counterId && s.IsActive).OrderBy(s => s.Id).Select(s => s.FullName).FirstOrDefaultAsync(ct);
+        staffName ??= "Staff";
+
+        var completed = await _db.Tokens.AsNoTracking()
+            .Include(t => t.Service)
+            .Include(t => t.SubService)
+            .Where(t => t.CounterId == counterId && t.CompletedAt >= periodStart && t.CompletedAt < periodEnd)
             .ToListAsync(ct);
-        var hourly = completedHours
-            .GroupBy(h => h)
-            .Select(g => new HourlyServedPointDto($"{g.Key:00}:00", g.Count()))
-            .OrderBy(x => x.HourLabel)
+
+        var skippedCount = await _db.Tokens.AsNoTracking()
+            .CountAsync(t => t.CounterId == counterId && t.SkippedAt >= periodStart && t.SkippedAt < periodEnd, ct);
+
+        var prevCompleted = await _db.Tokens.AsNoTracking()
+            .CountAsync(t => t.CounterId == counterId && t.CompletedAt >= prevStart && t.CompletedAt < prevEnd, ct);
+
+        var prevSkipped = await _db.Tokens.AsNoTracking()
+            .CountAsync(t => t.CounterId == counterId && t.SkippedAt >= prevStart && t.SkippedAt < prevEnd, ct);
+
+        var serviceSeconds = completed
+            .Where(t => t.StartedAt.HasValue && t.CompletedAt.HasValue)
+            .Select(t => (int)(t.CompletedAt!.Value - t.StartedAt!.Value).TotalSeconds)
+            .ToList();
+        var avgSeconds = serviceSeconds.Count == 0 ? 0 : serviceSeconds.Average();
+
+        var prevServiceSeconds = await _db.Tokens.AsNoTracking()
+            .Where(t => t.CounterId == counterId && t.CompletedAt >= prevStart && t.CompletedAt < prevEnd && t.StartedAt.HasValue && t.CompletedAt.HasValue)
+            .Select(t => EF.Functions.DateDiffSecond(t.StartedAt!.Value, t.CompletedAt!.Value))
+            .ToListAsync(ct);
+        var prevAvgSeconds = prevServiceSeconds.Count == 0 ? 0 : prevServiceSeconds.Average();
+
+        var servedCount = completed.Count;
+        var totalProcessed = servedCount + skippedCount;
+        var rate = totalProcessed == 0 ? 0 : Math.Round((decimal)servedCount / totalProcessed * 100, 2);
+
+        var prevTotal = prevCompleted + prevSkipped;
+        var prevRate = prevTotal == 0 ? 0 : Math.Round((decimal)prevCompleted / prevTotal * 100, 2);
+
+        var servedTrend = BuildServedTrendLabel(servedCount, prevCompleted);
+        var avgServiceTrend = BuildAvgServiceTrendLabel((int)avgSeconds, (int)prevAvgSeconds);
+        var completionTrend = Math.Abs(rate - prevRate) <= 2 ? "Stable" : FormatSignedPercent(rate - prevRate);
+
+        var dailyTarget = await GetSettingIntAsync("STAFF_DAILY_TARGET", 50, ct);
+        var servedProgress = dailyTarget == 0 ? 0 : Math.Min(100, Math.Round((decimal)servedCount / dailyTarget * 100, 0));
+
+        var branchServiceSeconds = await _db.Tokens.AsNoTracking()
+            .Where(t => t.CompletedAt >= periodStart && t.CompletedAt < periodEnd && t.StartedAt.HasValue && t.CompletedAt.HasValue)
+            .Select(t => EF.Functions.DateDiffSecond(t.StartedAt!.Value, t.CompletedAt!.Value))
+            .ToListAsync(ct);
+        var branchAvgSeconds = branchServiceSeconds.Count == 0 ? 0 : branchServiceSeconds.Average();
+
+        var avgServiceHint = avgSeconds <= 0
+            ? "No completed services yet"
+            : avgSeconds <= branchAvgSeconds * 0.95
+                ? "Top 5% efficiency in branch"
+                : avgSeconds <= branchAvgSeconds
+                    ? "Above branch average"
+                    : "Room to improve vs branch average";
+
+        var avgServiceProgress = avgSeconds <= 0 || branchAvgSeconds <= 0
+            ? 0
+            : Math.Min(100, Math.Max(10, (decimal)(branchAvgSeconds / avgSeconds * 85)));
+
+        var activityTokens = await _db.Tokens.AsNoTracking()
+            .Include(t => t.Service)
+            .Include(t => t.SubService)
+            .Where(t => t.CounterId == counterId && (
+                (t.CreatedAt >= periodStart && t.CreatedAt < periodEnd) ||
+                (t.CalledAt >= periodStart && t.CalledAt < periodEnd) ||
+                (t.StartedAt >= periodStart && t.StartedAt < periodEnd) ||
+                (t.CompletedAt >= periodStart && t.CompletedAt < periodEnd) ||
+                (t.SkippedAt >= periodStart && t.SkippedAt < periodEnd) ||
+                ((t.Status == TokenStatus.CALLED || t.Status == TokenStatus.SERVING) &&
+                 t.CalledAt >= periodStart && t.CalledAt < periodEnd)))
+            .ToListAsync(ct);
+
+        var hourlyTraffic = BuildHourlyTraffic(activityTokens);
+        var hourly = hourlyTraffic
+            .Select(h => new HourlyServedPointDto(h.HourLabel, h.CashCount + h.AccountCount + h.LoanCount))
             .ToList();
 
-        var timeline = await _db.TokenStatusHistories.AsNoTracking()
-            .Where(h => h.CounterId == counterId)
-            .OrderByDescending(h => h.ChangedAt).Take(12)
-            .Select(h => new StaffTimelineItemDto(
-                $"{h.NewStatus}",
-                h.Remarks ?? "Status changed",
-                h.ChangedAt))
-            .ToListAsync(ct);
+        var timeline = await BuildPerformanceTimelineAsync(counterId, periodStart, periodEnd, activityTokens, ct);
 
-        var tip = await GetDisplayMessageAsync("STAFF_PERFORMANCE_TIP", "Maintain current service pace during peak slots.", ct);
-        return new StaffPerformanceDto(served.Count, FormatDuration((int)avgSeconds), skipped, rate, hourly, timeline, tip);
+        var tip = await BuildPerformanceTipAsync(completed, hourlyTraffic, ct);
+
+        var reportDateLabel = isWeek
+            ? $"{periodStart:MMMM d} – {DateTime.Today:MMMM d, yyyy}"
+            : DateTime.Today.ToString("MMMM d, yyyy");
+        var rangeLabel = isWeek ? "This Week" : "Today";
+        var servedLabel = isWeek ? "Served This Week" : "Served Today";
+
+        return new StaffPerformanceDto(
+            servedCount,
+            FormatDuration((int)avgSeconds),
+            skippedCount,
+            rate,
+            hourly,
+            timeline,
+            tip,
+            staffName,
+            reportDateLabel,
+            rangeLabel,
+            servedLabel,
+            dailyTarget,
+            servedProgress,
+            servedTrend,
+            avgServiceTrend,
+            avgServiceProgress,
+            avgServiceHint,
+            completionTrend,
+            rate,
+            "Goal: >90% minimum",
+            hourlyTraffic);
     }
 
     public async Task<StaffNotificationResponseDto> GetNotificationsAsync(int counterId, CancellationToken ct = default)
@@ -408,7 +540,7 @@ public class StaffConsoleService : IStaffConsoleService
     public async Task<StaffTokenDetailsDto?> GetTokenDetailsAsync(int tokenId, CancellationToken ct = default)
     {
         var token = await _db.Tokens.AsNoTracking()
-            .Include(t => t.Service).Include(t => t.SubService).Include(t => t.Language)
+            .Include(t => t.Service).Include(t => t.SubService).Include(t => t.Language).Include(t => t.Counter)
             .FirstOrDefaultAsync(t => t.Id == tokenId, ct);
         if (token == null) return null;
 
@@ -417,11 +549,47 @@ public class StaffConsoleService : IStaffConsoleService
                 t.Status == TokenStatus.WAITING
                 && t.ServiceId == token.ServiceId
                 && (t.QueuedAt ?? t.CreatedAt) <= (token.QueuedAt ?? token.CreatedAt), ct);
-        var journey = await _db.TokenStatusHistories.AsNoTracking()
+
+        var histories = await _db.TokenStatusHistories.AsNoTracking()
             .Where(h => h.TokenId == tokenId)
             .OrderBy(h => h.ChangedAt)
-            .Select(h => new TokenJourneyItemDto(h.NewStatus.ToString(), h.ChangedAt, h.Remarks))
             .ToListAsync(ct);
+
+        var counterIds = histories
+            .Where(h => h.CounterId.HasValue)
+            .Select(h => h.CounterId!.Value)
+            .Distinct()
+            .ToList();
+        var counterNames = counterIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await _db.Counters.AsNoTracking()
+                .Where(c => counterIds.Contains(c.Id))
+                .ToDictionaryAsync(c => c.Id, c => c.CounterName, ct);
+
+        var kioskLabel = await GetDisplayMessageAsync("STAFF_TOKEN_SOURCE_KIOSK", "Self-Service Kiosk", ct);
+        var journey = histories.Select(h =>
+        {
+            var counterName = h.CounterId.HasValue && counterNames.TryGetValue(h.CounterId.Value, out var name) ? name : null;
+            var mapped = MapJourneyStep(h.NewStatus, h.OldStatus, h.ChangedAt, h.Remarks, counterName, kioskLabel);
+            return new TokenJourneyItemDto(h.NewStatus.ToString(), h.ChangedAt, h.Remarks, mapped.Title, mapped.Subtitle);
+        }).ToList();
+
+        if (token.Status == TokenStatus.WAITING && journey.Count == 1)
+        {
+            var queuedAt = token.QueuedAt ?? token.CreatedAt;
+            journey.Add(new TokenJourneyItemDto(
+                TokenStatus.WAITING.ToString(),
+                queuedAt,
+                "Entered waiting pool",
+                "Enters Waiting Pool",
+                $"Global Queue • {queuedAt:HH:mm:ss}"));
+        }
+
+        var isPriority = token.Priority != TokenPriority.STANDARD;
+        var customerName = await ResolveCustomerLabelAsync(token.Priority, ct);
+        var customerSubtitleKey = isPriority ? "STAFF_CUSTOMER_SUBTITLE_VIP" : "STAFF_CUSTOMER_SUBTITLE_STANDARD";
+        var customerSubtitleFallback = isPriority ? "Immediate priority handling" : "Standard queue customer";
+        var customerSubtitle = await GetDisplayMessageAsync(customerSubtitleKey, customerSubtitleFallback, ct);
 
         return new StaffTokenDetailsDto(
             token.Id,
@@ -434,7 +602,8 @@ public class StaffConsoleService : IStaffConsoleService
             token.CreatedAt,
             Math.Max(0, (int)(DateTime.Now - token.CreatedAt).TotalMinutes),
             Math.Max(1, queuePosition),
-            null,
+            customerName,
+            customerSubtitle,
             journey);
     }
 
@@ -529,12 +698,13 @@ public class StaffConsoleService : IStaffConsoleService
         return new StaffCounterStatusResultDto(true, message, mapped.Value.ToString());
     }
 
-    private async Task<TokenActionResultDto?> UpdateStatusAsync(int tokenId, int counterId, int? staffUserId, TokenStatus targetStatus, TokenStatus[] allowed, string signalName, string defaultMessage, CancellationToken ct, bool setStartedAt = false, bool setCompletedAt = false, bool setSkippedAt = false, string? remarks = null)
+    private async Task<TokenActionResultDto?> UpdateStatusAsync(int tokenId, int counterId, int? staffUserId, TokenStatus targetStatus, TokenStatus[] allowed, string signalName, string defaultMessage, CancellationToken ct, bool setStartedAt = false, bool setCompletedAt = false, bool setSkippedAt = false, bool setCancelledAt = false, string? remarks = null, bool allowUnassignedCounter = false)
     {
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
         var token = await _db.Tokens.Include(t => t.Service).Include(t => t.SubService).FirstOrDefaultAsync(t => t.Id == tokenId, ct);
         if (token == null) return null;
-        if (token.CounterId != counterId && !await IsAdminAsync(staffUserId, ct)) return new TokenActionResultDto(false, "Unauthorized for this token.", null);
+        if (!allowUnassignedCounter && token.CounterId != counterId && !await IsAdminAsync(staffUserId, ct))
+            return new TokenActionResultDto(false, "Unauthorized for this token.", null);
         if (!allowed.Contains(token.Status)) return new TokenActionResultDto(false, $"Invalid token status transition from {token.Status}.", null);
 
         var oldStatus = token.Status;
@@ -542,6 +712,7 @@ public class StaffConsoleService : IStaffConsoleService
         if (setStartedAt) token.StartedAt = DateTime.Now;
         if (setCompletedAt) token.CompletedAt = DateTime.Now;
         if (setSkippedAt) token.SkippedAt = DateTime.Now;
+        if (setCancelledAt) token.CancelledAt = DateTime.Now;
         if (targetStatus is TokenStatus.COMPLETED or TokenStatus.SKIPPED)
         {
             var hasOtherActive = await _db.Tokens.AnyAsync(t => t.CounterId == counterId && t.Id != token.Id && (t.Status == TokenStatus.CALLED || t.Status == TokenStatus.SERVING), ct);
@@ -607,6 +778,267 @@ public class StaffConsoleService : IStaffConsoleService
         return $"{mins}m {sec:00}s";
     }
 
+    private static string FormatSignedPercent(decimal value)
+    {
+        var rounded = Math.Round(value);
+        return rounded >= 0 ? $"+{rounded}%" : $"{rounded}%";
+    }
+
+    private static string BuildServedTrendLabel(int current, int previous)
+    {
+        if (previous == 0) return current > 0 ? "+100%" : "0%";
+        var pct = Math.Round((decimal)(current - previous) / previous * 100);
+        return pct >= 0 ? $"+{pct}%" : $"{pct}%";
+    }
+
+    private static string BuildAvgServiceTrendLabel(int currentSeconds, int previousSeconds)
+    {
+        if (previousSeconds <= 0) return "Stable";
+        var delta = previousSeconds - currentSeconds;
+        if (delta == 0) return "Stable";
+        return FormatDurationDelta(delta);
+    }
+
+    private static string FormatDurationDelta(int seconds)
+    {
+        var sign = seconds >= 0 ? "-" : "+";
+        var abs = Math.Abs(seconds);
+        var mins = abs / 60;
+        var sec = abs % 60;
+        return $"{sign}{mins}:{sec:00}";
+    }
+
+    private static bool TokenTouchedInPeriod(Token token, DateTime periodStart, DateTime periodEnd) =>
+        (token.CreatedAt >= periodStart && token.CreatedAt < periodEnd) ||
+        (token.CalledAt >= periodStart && token.CalledAt < periodEnd) ||
+        (token.StartedAt >= periodStart && token.StartedAt < periodEnd) ||
+        (token.CompletedAt >= periodStart && token.CompletedAt < periodEnd) ||
+        (token.SkippedAt >= periodStart && token.SkippedAt < periodEnd) ||
+        (token.Status is TokenStatus.CALLED or TokenStatus.SERVING &&
+         token.CalledAt >= periodStart && token.CalledAt < periodEnd);
+
+    private static DateTime? GetTokenActivityTime(Token token) =>
+        token.CompletedAt ?? token.SkippedAt ?? token.StartedAt ?? token.CalledAt;
+
+    private static (int Cash, int Account, int Loan) ClassifyHourlyTraffic(IReadOnlyList<Token> hourTokens)
+    {
+        var cash = 0;
+        var account = 0;
+        var loan = 0;
+
+        foreach (var token in hourTokens)
+        {
+            var code = token.Service?.Code ?? string.Empty;
+            var prefix = token.TokenPrefix ?? string.Empty;
+
+            if (code.Equals("CASH", StringComparison.OrdinalIgnoreCase) ||
+                prefix.Equals("CW", StringComparison.OrdinalIgnoreCase) ||
+                prefix.Equals("CD", StringComparison.OrdinalIgnoreCase))
+            {
+                cash++;
+                continue;
+            }
+
+            if (code.Equals("LOAN", StringComparison.OrdinalIgnoreCase) ||
+                prefix.StartsWith("LN", StringComparison.OrdinalIgnoreCase))
+            {
+                loan++;
+                continue;
+            }
+
+            account++;
+        }
+
+        return (cash, account, loan);
+    }
+
+    private static IReadOnlyList<HourlyTrafficPointDto> BuildHourlyTraffic(IReadOnlyList<Token> activityTokens)
+    {
+        var minHour = 8;
+        var maxHour = 17;
+        var timedTokens = activityTokens
+            .Select(t => new { Token = t, At = GetTokenActivityTime(t) })
+            .Where(x => x.At.HasValue)
+            .ToList();
+
+        if (timedTokens.Count > 0)
+        {
+            var hours = timedTokens.Select(x => x.At!.Value.Hour).ToList();
+            minHour = Math.Min(8, hours.Min());
+            maxHour = Math.Max(17, hours.Max());
+        }
+
+        var points = new List<HourlyTrafficPointDto>();
+        for (var hour = minHour; hour <= maxHour; hour++)
+        {
+            var hourTokens = timedTokens.Where(x => x.At!.Value.Hour == hour).Select(x => x.Token).ToList();
+            var (cash, account, loan) = ClassifyHourlyTraffic(hourTokens);
+            points.Add(new HourlyTrafficPointDto($"{hour:00}:00", cash, account, loan));
+        }
+
+        if (points.Count == 0)
+        {
+            for (var hour = 8; hour <= 17; hour++)
+                points.Add(new HourlyTrafficPointDto($"{hour:00}:00", 0, 0, 0));
+        }
+
+        return points;
+    }
+
+    private async Task<IReadOnlyList<StaffTimelineItemDto>> BuildPerformanceTimelineAsync(
+        int counterId,
+        DateTime periodStart,
+        DateTime periodEnd,
+        IReadOnlyList<Token> activityTokens,
+        CancellationToken ct)
+    {
+        var items = new List<StaffTimelineItemDto>();
+
+        foreach (var token in activityTokens)
+        {
+            if (token.CompletedAt >= periodStart && token.CompletedAt < periodEnd)
+            {
+                var serviceSeconds = token.StartedAt.HasValue
+                    ? (int)(token.CompletedAt!.Value - token.StartedAt.Value).TotalSeconds
+                    : 0;
+                items.Add(new StaffTimelineItemDto(
+                    "COMPLETED",
+                    token.TokenNo,
+                    $"{token.TokenNo} Completed",
+                    token.SubService.Name,
+                    serviceSeconds > 0 ? "Service Time" : null,
+                    serviceSeconds > 0 ? FormatDuration(serviceSeconds) : null,
+                    token.CompletedAt.Value));
+                continue;
+            }
+
+            if (token.SkippedAt >= periodStart && token.SkippedAt < periodEnd)
+            {
+                var waitSeconds = token.CalledAt.HasValue
+                    ? (int)(token.SkippedAt!.Value - token.CalledAt.Value).TotalSeconds
+                    : token.QueuedAt.HasValue
+                        ? (int)(token.SkippedAt.Value - token.QueuedAt.Value).TotalSeconds
+                        : 0;
+                items.Add(new StaffTimelineItemDto(
+                    "SKIPPED",
+                    token.TokenNo,
+                    $"{token.TokenNo} Skipped",
+                    $"{token.SubService.Name} • No show",
+                    waitSeconds > 0 ? "Wait time" : null,
+                    waitSeconds > 0 ? FormatDuration(waitSeconds) : null,
+                    token.SkippedAt.Value));
+                continue;
+            }
+
+            if (token.Status == TokenStatus.SERVING && token.StartedAt.HasValue)
+            {
+                var elapsed = (int)(DateTime.Now - token.StartedAt.Value).TotalSeconds;
+                items.Add(new StaffTimelineItemDto(
+                    "SERVING",
+                    token.TokenNo,
+                    $"{token.TokenNo} In Service",
+                    token.SubService.Name,
+                    "Elapsed",
+                    FormatDuration(elapsed),
+                    token.StartedAt.Value));
+                continue;
+            }
+
+            if (token.CalledAt >= periodStart && token.CalledAt < periodEnd &&
+                token.Status is TokenStatus.CALLED or TokenStatus.SERVING)
+            {
+                var waitMinutes = token.QueuedAt.HasValue
+                    ? Math.Max(0, (int)(token.CalledAt.Value - token.QueuedAt.Value).TotalMinutes)
+                    : Math.Max(0, (int)(token.CalledAt.Value - token.CreatedAt).TotalMinutes);
+                items.Add(new StaffTimelineItemDto(
+                    "CALLED",
+                    token.TokenNo,
+                    $"{token.TokenNo} Called",
+                    token.SubService.Name,
+                    "Wait time",
+                    FormatWaitDuration(waitMinutes),
+                    token.CalledAt.Value));
+            }
+        }
+
+        if (items.Count == 0)
+        {
+            var histories = await _db.TokenStatusHistories.AsNoTracking()
+                .Include(h => h.Token).ThenInclude(t => t.SubService)
+                .Where(h => h.CounterId == counterId && h.ChangedAt >= periodStart && h.ChangedAt < periodEnd)
+                .OrderByDescending(h => h.ChangedAt)
+                .Take(20)
+                .ToListAsync(ct);
+
+            foreach (var history in histories)
+            {
+                items.Add(new StaffTimelineItemDto(
+                    history.NewStatus.ToString(),
+                    history.Token.TokenNo,
+                    $"{history.Token.TokenNo} {history.NewStatus}",
+                    history.Remarks ?? history.Token.SubService.Name,
+                    null,
+                    null,
+                    history.ChangedAt));
+            }
+        }
+
+        if (items.Count == 0)
+        {
+            for (var day = periodStart.Date; day < periodEnd.Date; day = day.AddDays(1))
+            {
+                var historyItems = await GetTokenHistoryAsync(counterId, day, null, null, null, null, ct);
+                foreach (var row in historyItems.Take(12))
+                {
+                    var eventType = row.Status.ToUpperInvariant();
+                    var timestamp = row.CalledTime ?? day.AddHours(12);
+                    items.Add(new StaffTimelineItemDto(
+                        eventType,
+                        row.TokenNo,
+                        $"{row.TokenNo} {row.Status}",
+                        row.ServiceType,
+                        row.Duration != "--" ? "Duration" : null,
+                        row.Duration != "--" ? row.Duration : null,
+                        timestamp));
+                }
+            }
+        }
+
+        return items
+            .OrderByDescending(i => i.Timestamp)
+            .Take(12)
+            .ToList();
+    }
+
+    private async Task<string> BuildPerformanceTipAsync(
+        IReadOnlyList<Token> completed,
+        IReadOnlyList<HourlyTrafficPointDto> hourlyTraffic,
+        CancellationToken ct)
+    {
+        if (completed.Count == 0)
+            return await GetDisplayMessageAsync("STAFF_PERFORMANCE_TIP", "Maintain current service pace during peak slots.", ct);
+
+        var bestSubService = completed
+            .Where(t => t.StartedAt.HasValue && t.CompletedAt.HasValue)
+            .GroupBy(t => t.SubService.Name)
+            .Select(g => new
+            {
+                Name = g.Key,
+                AvgSeconds = g.Average(t => (t.CompletedAt!.Value - t.StartedAt!.Value).TotalSeconds)
+            })
+            .OrderBy(x => x.AvgSeconds)
+            .FirstOrDefault();
+
+        var peakHour = hourlyTraffic
+            .OrderByDescending(h => h.CashCount + h.AccountCount + h.LoanCount)
+            .FirstOrDefault();
+
+        if (bestSubService == null || peakHour == null)
+            return await GetDisplayMessageAsync("STAFF_PERFORMANCE_TIP", "Maintain current service pace during peak slots.", ct);
+
+        return $"Your service time for '{bestSubService.Name}' is exceptionally low. Try maintaining this momentum during the {peakHour.HourLabel} peak to reach the Branch Champion status.";
+    }
+
     private async Task<List<int>> GetAssignedServiceIdsAsync(int counterId, CancellationToken ct) =>
         await _db.CounterServiceAssignments.AsNoTracking()
             .Where(a => a.CounterId == counterId && a.IsActive)
@@ -614,32 +1046,9 @@ public class StaffConsoleService : IStaffConsoleService
             .Distinct()
             .ToListAsync(ct);
 
-    private async Task<(int SequenceNo, string TokenNo)> GetNextTokenForSubServiceAsync(int subServiceId, string tokenPrefix, CancellationToken ct)
-    {
-        var today = DateTime.Today;
-        var sequence = await _db.DailyTokenSequences
-            .FirstOrDefaultAsync(d => d.SequenceDate == today && d.SubServiceId == subServiceId, ct);
-
-        if (sequence == null)
-        {
-            sequence = new DailyTokenSequence
-            {
-                SequenceDate = today,
-                SubServiceId = subServiceId,
-                TokenPrefix = tokenPrefix,
-                LastNumber = 0,
-                UpdatedAt = DateTime.Now
-            };
-            _db.DailyTokenSequences.Add(sequence);
-        }
-
-        sequence.TokenPrefix = tokenPrefix;
-        sequence.LastNumber += 1;
-        sequence.UpdatedAt = DateTime.Now;
-
-        var sequenceNo = sequence.LastNumber;
-        return (sequenceNo, $"{tokenPrefix}-{sequenceNo:D3}");
-    }
+    private Task<(int SequenceNo, string TokenNo)> GetNextTokenForSubServiceAsync(
+        int subServiceId, string tokenPrefix, CancellationToken ct) =>
+        TokenSequenceHelper.NextAsync(_db, subServiceId, tokenPrefix, ct);
 
     private async Task<string> GetSettingAsync(string key, string fallback, CancellationToken ct)
     {
@@ -732,5 +1141,28 @@ public class StaffConsoleService : IStaffConsoleService
         var h = minutes / 60;
         var m = minutes % 60;
         return m == 0 ? $"{h}h" : $"{h}h {m}m";
+    }
+
+    private static (string Title, string Subtitle) MapJourneyStep(
+        TokenStatus newStatus,
+        TokenStatus? oldStatus,
+        DateTime changedAt,
+        string? remarks,
+        string? counterName,
+        string kioskLabel)
+    {
+        var time = changedAt.ToString("HH:mm:ss");
+        return newStatus switch
+        {
+            TokenStatus.WAITING when oldStatus == null => ("Token Generated", $"{kioskLabel} • {time}"),
+            TokenStatus.WAITING => ("Enters Waiting Pool", $"Global Queue • {time}"),
+            TokenStatus.CALLED => ("Token Called", $"{counterName ?? "Counter"} • {time}"),
+            TokenStatus.SERVING => ("Service Started", $"{counterName ?? "Counter"} • {time}"),
+            TokenStatus.COMPLETED => ("Service Completed", $"{counterName ?? "Counter"} • {time}"),
+            TokenStatus.SKIPPED => ("Marked No Show", string.IsNullOrWhiteSpace(remarks) ? time : $"{remarks} • {time}"),
+            TokenStatus.CANCELLED => ("Token Cancelled", string.IsNullOrWhiteSpace(remarks) ? time : $"{remarks} • {time}"),
+            TokenStatus.TRANSFERRED => ("Token Transferred", string.IsNullOrWhiteSpace(remarks) ? time : $"{remarks} • {time}"),
+            _ => (newStatus.ToString(), time)
+        };
     }
 }

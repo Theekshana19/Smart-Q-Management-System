@@ -1,0 +1,88 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #0b1c30;
+  padding: 2rem;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  background: #111827;
+  color: #f9fafb;
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid #1f2937;
+}
+
+.brand h1 {
+  margin: 0;
+  color: #81f2eb;
+  font-size: 2rem;
+}
+
+.brand p {
+  margin: 0.25rem 0 0;
+  color: #9ca3af;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0 1.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  font-size: 0.875rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+form {
+  display: grid;
+  gap: 1rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  color: #d1d5db;
+}
+
+input {
+  background: #1f2937;
+  border: 1px solid #374151;
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+}
+
+button {
+  background: #006a66;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.7;
+}

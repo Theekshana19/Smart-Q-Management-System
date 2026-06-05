@@ -101,9 +101,20 @@ export interface HourlyServedPoint {
   servedCount: number;
 }
 
+export interface HourlyTrafficPoint {
+  hourLabel: string;
+  cashCount: number;
+  accountCount: number;
+  loanCount: number;
+}
+
 export interface StaffTimelineItem {
+  eventType: string;
+  tokenNo: string;
   title: string;
   description: string;
+  metricLabel?: string | null;
+  metricValue?: string | null;
   timestamp: string;
 }
 
@@ -115,6 +126,20 @@ export interface StaffPerformance {
   hourlyServed: HourlyServedPoint[];
   recentTimeline: StaffTimelineItem[];
   optimizationTip: string;
+  staffName: string;
+  reportDateLabel: string;
+  rangeLabel: string;
+  servedLabel: string;
+  dailyTarget: number;
+  servedProgressPercent: number;
+  servedTrendLabel: string;
+  avgServiceTimeTrendLabel: string;
+  avgServiceProgressPercent: number;
+  avgServiceHint: string;
+  completionTrendLabel: string;
+  completionProgressPercent: number;
+  completionHint: string;
+  hourlyTraffic: HourlyTrafficPoint[];
 }
 
 export interface StaffNotificationItem {
@@ -134,6 +159,8 @@ export interface TokenJourneyItem {
   newStatus: string;
   changedAt: string;
   remarks?: string;
+  title: string;
+  subtitle: string;
 }
 
 export interface StaffTokenDetails {
@@ -147,7 +174,8 @@ export interface StaffTokenDetails {
   createdTime: string;
   waitingMinutes: number;
   queuePosition: number;
-  customerName?: string;
+  customerName?: string | null;
+  customerSubtitle?: string | null;
   journey: TokenJourneyItem[];
 }
 

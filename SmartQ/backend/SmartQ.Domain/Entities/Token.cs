@@ -8,6 +8,7 @@ public class Token
     public string TokenNo { get; set; } = string.Empty;
     public string TokenPrefix { get; set; } = string.Empty;
     public int SequenceNo { get; set; }
+    public DateOnly SequenceDate { get; set; }
     public int LanguageId { get; set; }
     public int ServiceId { get; set; }
     public int SubServiceId { get; set; }

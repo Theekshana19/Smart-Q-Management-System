@@ -1,0 +1,67 @@
+<app-admin-error-banner *ngIf="errorMsg()" [message]="errorMsg()" [status]="errorStatus()" (retry)="load()" />
+
+<section class="page-header">
+  <div>
+    <h1>Display Messages</h1>
+    <p>Manage kiosk, staff, and queue display messages.</p>
+  </div>
+  <button type="button" class="primary" (click)="openCreate()">+ Add Message</button>
+</section>
+
+<div class="toolbar">
+  <select [ngModel]="filterLang()" (ngModelChange)="filterLang.set($event)">
+    <option value="">All Languages</option>
+    <option [ngValue]="''">Global / Default</option>
+    <option *ngFor="let l of languages()" [ngValue]="l.id">{{ l.code }} - {{ l.name }}</option>
+  </select>
+  <input type="search" placeholder="Message key..." [ngModel]="filterKey()" (ngModelChange)="filterKey.set($event)" />
+  <select [ngModel]="filterActive()" (ngModelChange)="filterActive.set($event)">
+    <option value="">All Statuses</option>
+    <option [ngValue]="true">Active</option>
+    <option [ngValue]="false">Inactive</option>
+  </select>
+  <button type="button" (click)="load()">Apply</button>
+</div>
+
+<p *ngIf="loading()">Loading messages...</p>
+
+<table *ngIf="!loading() && !errorMsg()">
+  <thead>
+    <tr><th>Message Key</th><th>Language</th><th>Message Text</th><th>Order</th><th>Status</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let item of items()">
+      <td><code>{{ item.messageKey }}</code></td>
+      <td>{{ item.languageCode ?? 'Global' }}</td>
+      <td class="text-cell">{{ item.messageText }}</td>
+      <td>{{ item.displayOrder }}</td>
+      <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
+      <td class="actions">
+        <button type="button" (click)="openEdit(item)">Edit</button>
+        <button type="button" (click)="toggleStatus(item)">{{ item.isActive ? 'Disable' : 'Enable' }}</button>
+        <button type="button" (click)="remove(item)">Delete</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="modal-backdrop" *ngIf="modalOpen()">
+  <div class="modal wide">
+    <h2>{{ editItem() ? 'Edit Message' : 'Add Message' }}</h2>
+    <p class="modal-error" *ngIf="modalError()">{{ modalError() }}</p>
+    <label>Language
+      <select [ngModel]="form.languageId" (ngModelChange)="form.languageId = $event === '' ? null : +$event">
+        <option [ngValue]="null">Global / Default</option>
+        <option *ngFor="let l of languages()" [ngValue]="l.id">{{ l.code }} - {{ l.name }}</option>
+      </select>
+    </label>
+    <label>Message Key <input [(ngModel)]="form.messageKey" [disabled]="!!editItem()" /></label>
+    <label>Message Text <textarea rows="4" [(ngModel)]="form.messageText"></textarea></label>
+    <label>Display Order <input type="number" [(ngModel)]="form.displayOrder" /></label>
+    <label><input type="checkbox" [(ngModel)]="form.isActive" /> Active</label>
+    <div class="modal-actions">
+      <button type="button" (click)="modalOpen.set(false)">Cancel</button>
+      <button type="button" class="primary" [disabled]="saving()" (click)="save()">Save</button>
+    </div>
+  </div>
+</div>

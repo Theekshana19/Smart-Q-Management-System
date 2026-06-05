@@ -2,13 +2,15 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import Swal, { SweetAlertIcon, SweetAlertOptions, SweetAlertResult } from 'sweetalert2';
 import { CounterApiService } from '../../../core/api/counter-api.service';
+import { StaffTokenDetails } from '../../../core/models/staff-console.models';
+import { TokenDetailsDrawerComponent } from '../components/token-details-drawer/token-details-drawer.component';
 import { StaffConsoleApiService } from '../services/staff-console-api.service';
 import { StaffStateService } from '../services/staff-state.service';
 
 @Component({
   selector: 'app-queue-console',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TokenDetailsDrawerComponent],
   templateUrl: './queue-console.component.html',
   styleUrl: './queue-console.component.scss'
 })
@@ -18,6 +20,9 @@ export class QueueConsoleComponent {
   private readonly counterApi = inject(CounterApiService);
   private readonly busy = signal(false);
   readonly counters = signal<{ id: number; counterNo: string; counterName: string }[]>([]);
+  readonly selectedDetails = signal<StaffTokenDetails | null>(null);
+  readonly detailsLoading = signal(false);
+  readonly drawerOpen = signal(false);
   readonly actionBusy = computed(() => this.busy());
   readonly active = computed(() => this.state.activeSession());
   readonly queue = computed(() => this.state.queue());
@@ -75,7 +80,7 @@ export class QueueConsoleComponent {
   callNext(): void {
     if (this.busy()) return;
     this.busy.set(true);
-    this.api.callNext(this.state.counterId()).subscribe({
+    this.api.callNext().subscribe({
       next: (res) => {
         this.state.loadAll();
         void this.popup(res.hasToken ? 'Token Called' : 'No Eligible Token', res.message, res.hasToken ? 'success' : 'info');
@@ -92,7 +97,7 @@ export class QueueConsoleComponent {
     if (!tokenId) return;
     if (this.busy()) return;
     this.busy.set(true);
-    this.api.complete(tokenId, this.state.counterId()).subscribe({
+    this.api.complete(tokenId).subscribe({
       next: (res) => {
         this.state.loadAll();
         void this.popup(res.success ? 'Service Completed' : 'Not Completed', res.message, res.success ? 'success' : 'info');
@@ -107,14 +112,14 @@ export class QueueConsoleComponent {
   startService(): void {
     const tokenId = this.active()?.tokenId;
     if (!tokenId) return;
-    this.api.startService(tokenId, this.state.counterId()).subscribe(() => this.state.loadAll());
+    this.api.startService(tokenId).subscribe(() => this.state.loadAll());
   }
   recall(): void {
     const tokenId = this.active()?.tokenId;
     if (!tokenId) return;
     if (this.busy()) return;
     this.busy.set(true);
-    this.api.recall(tokenId, this.state.counterId()).subscribe({
+    this.api.recall(tokenId).subscribe({
       next: (res) => {
         this.state.loadAll();
         void this.popup(res.success ? 'Token Recalled' : 'Recall Skipped', res.message, res.success ? 'success' : 'info');
@@ -131,7 +136,7 @@ export class QueueConsoleComponent {
     if (!tokenId) return;
     if (this.busy()) return;
     this.busy.set(true);
-    this.api.noShow(tokenId, this.state.counterId()).subscribe({
+    this.api.noShow(tokenId).subscribe({
       next: (res) => {
         this.state.loadAll();
         void this.popup(res.success ? 'Marked as No Show' : 'No Show Not Applied', res.message, res.success ? 'warning' : 'info');
@@ -147,6 +152,11 @@ export class QueueConsoleComponent {
   async transfer(): Promise<void> {
     const tokenId = this.active()?.tokenId;
     if (!tokenId || this.busy()) return;
+    await this.runTransfer(tokenId);
+  }
+
+  private async runTransfer(tokenId: number): Promise<void> {
+    if (this.busy()) return;
     this.busy.set(true);
     this.api.getTransferOptions().subscribe({
       next: async (opts) => {
@@ -198,7 +208,7 @@ export class QueueConsoleComponent {
           return;
         }
 
-        this.api.transfer(tokenId, this.state.counterId(), result.value).subscribe({
+        this.api.transfer(tokenId, result.value).subscribe({
           next: (res) => {
             this.state.loadAll();
             void this.popup(res.success ? 'Token Transferred' : 'Transfer Not Applied', res.message, res.success ? 'success' : 'info');
@@ -225,8 +235,65 @@ export class QueueConsoleComponent {
     return 'warn';
   }
 
-  onCounterChange(event: Event): void {
-    const selected = Number((event.target as HTMLSelectElement).value);
-    this.state.setCounter(selected, 'my-services');
+  openDetails(tokenId: number): void {
+    this.drawerOpen.set(true);
+    this.detailsLoading.set(true);
+    this.selectedDetails.set(null);
+    this.api.getTokenDetails(tokenId).subscribe({
+      next: (details) => {
+        this.selectedDetails.set(details);
+        this.detailsLoading.set(false);
+      },
+      error: () => {
+        this.detailsLoading.set(false);
+        this.drawerOpen.set(false);
+        void this.popup('Load Failed', 'Unable to load token details.', 'error');
+      }
+    });
+  }
+
+  closeDetails(): void {
+    this.drawerOpen.set(false);
+    this.selectedDetails.set(null);
+    this.detailsLoading.set(false);
+  }
+
+  onDrawerRecall(tokenId: number): void {
+    this.closeDetails();
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.api.recall(tokenId).subscribe({
+      next: (res) => {
+        this.state.loadAll();
+        void this.popup(res.success ? 'Token Recalled' : 'Recall Skipped', res.message, res.success ? 'success' : 'info');
+      },
+      error: () => {
+        this.busy.set(false);
+        void this.popup('Action Failed', 'Recall action failed.', 'error');
+      },
+      complete: () => { this.busy.set(false); }
+    });
+  }
+
+  onDrawerCancel(tokenId: number): void {
+    this.closeDetails();
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.api.cancel(tokenId).subscribe({
+      next: (res) => {
+        this.state.loadAll();
+        void this.popup(res.success ? 'Token Cancelled' : 'Cancel Not Applied', res.message, res.success ? 'success' : 'warning');
+      },
+      error: () => {
+        this.busy.set(false);
+        void this.popup('Action Failed', 'Cancel action failed.', 'error');
+      },
+      complete: () => { this.busy.set(false); }
+    });
+  }
+
+  onDrawerTransfer(tokenId: number): void {
+    this.closeDetails();
+    void this.runTransfer(tokenId);
   }
 }

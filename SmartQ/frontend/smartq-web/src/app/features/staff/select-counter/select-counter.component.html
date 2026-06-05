@@ -1,0 +1,37 @@
+<div class="page">
+  <header>
+    <h1>Select Your Counter</h1>
+    <p>Choose the counter you will operate for this shift.</p>
+  </header>
+
+  <div class="error" *ngIf="error()">{{ error() }}</div>
+  <p class="loading" *ngIf="loading()">Loading counters...</p>
+
+  <div class="grid" *ngIf="!loading()">
+    <article class="card" *ngFor="let c of counters()" [class.disabled]="!c.isAvailableForLogin">
+      <div class="head">
+        <div>
+          <h2>Counter {{ c.counterNo }}</h2>
+          <p>{{ c.counterName }}</p>
+        </div>
+        <span class="status" [class.available]="c.isAvailableForLogin">{{ c.status }}</span>
+      </div>
+
+      <div class="services" *ngIf="c.assignedServices.length">
+        <p class="label">Assigned Services</p>
+        <ul>
+          <li *ngFor="let s of c.assignedServices">
+            {{ s.serviceName }} ({{ s.serviceCode }})
+            <span class="prefixes" *ngIf="s.tokenPrefixes.length">{{ s.tokenPrefixes.join(', ') }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <p class="occupied" *ngIf="c.activeStaffName">In use by {{ c.activeStaffName }}</p>
+
+      <button type="button" [disabled]="!c.isAvailableForLogin || selecting() === c.counterId" (click)="select(c)">
+        {{ selecting() === c.counterId ? 'Selecting...' : 'Select Counter' }}
+      </button>
+    </article>
+  </div>
+</div>

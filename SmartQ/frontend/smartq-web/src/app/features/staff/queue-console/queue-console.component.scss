@@ -59,6 +59,7 @@ table { width: 100%; border-collapse: collapse; }
 th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #45464d; padding: 10px 20px; text-align: left; background: rgba(211,228,254,.2); }
 td { padding: 14px 20px; border-bottom: 1px solid rgba(198,198,205,.1); font-size: 14px; }
 tbody tr:hover { background: rgba(129,242,235,.08); }
+.queue-row { cursor: pointer; }
 .status-chip { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 10px; border-radius: 999px; background: #d3e4fe; color: #45464d; }
 .status-chip.vip { background: #84f5ee; color: #00504d; }
 .view-all { width: 100%; border: 0; background: transparent; padding: 14px; color: #006a66; font-size: 12px; font-weight: 600; }

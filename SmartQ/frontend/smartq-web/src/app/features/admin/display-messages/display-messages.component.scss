@@ -1,0 +1,5 @@
+@import '../staff-management/staff-management.component.scss';
+
+.text-cell { max-width: 360px; white-space: pre-wrap; }
+.modal.wide { width: min(560px, 92vw); }
+textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 0.5rem; }

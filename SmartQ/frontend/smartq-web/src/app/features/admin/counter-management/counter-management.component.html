@@ -1,18 +1,161 @@
-<div class="page">
-  <h1>Counter Management</h1>
-  <div class="counter-grid">
-    @for (c of counters(); track c['id']) {
-      <div class="counter-card card">
-        <h3>{{ c['counterName'] }}</h3>
-        <span class="status">{{ c['status'] }}</span>
-        <p>Staff: {{ c['assignedStaff'] ?? 'Unassigned' }}</p>
-        <ul>
-          @for (svc of $any(c['assignedServices']); track svc) {
-            <li>{{ svc }}</li>
-          }
-        </ul>
+<div class="admin-page">
+  <div class="page-head">
+    <div>
+      <h2 class="page-title">Counter Management</h2>
+      <p class="page-subtitle">Monitor, assign, and manage live service stations across the floor.</p>
+    </div>
+    <div class="head-actions">
+      <a routerLink="/admin/counter-assignments" class="btn-outline-action">
+        <span class="material-symbols-outlined">link</span> Assignments
+      </a>
+      <button class="btn-primary-action" type="button" (click)="openCreate()">
+        <span class="material-symbols-outlined">add</span> Add Counter
+      </button>
+    </div>
+  </div>
+
+  <app-admin-error-banner [message]="errorMsg()" [status]="errorStatus()" (retry)="load()" />
+
+  @if (loading()) {
+    <div class="page-loading">Loading counter management…</div>
+  } @else {
+
+    <!-- Summary KPI Cards -->
+    @if (summary(); as s) {
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon green"><span class="material-symbols-outlined">desktop_windows</span></div>
+            <span class="kpi-trend positive">+{{ s.activeCounters > 0 ? 2 : 0 }} New</span>
+          </div>
+          <p class="kpi-label">Active Counters</p>
+          <h3 class="kpi-value">{{ s.activeCounters }} / {{ s.totalCounters }}</h3>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon navy"><span class="material-symbols-outlined">groups</span></div>
+            <span class="kpi-badge-text navy-text">{{ s.staffCapacityPercent }}% Cap.</span>
+          </div>
+          <p class="kpi-label">Total Staff Live</p>
+          <h3 class="kpi-value">{{ s.staffLive }} Staff</h3>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon surface"><span class="material-symbols-outlined">timer</span></div>
+            <span class="kpi-badge-text muted-text">-4.2m</span>
+          </div>
+          <p class="kpi-label">Avg. Service Time</p>
+          <h3 class="kpi-value">{{ s.avgServiceTime }}</h3>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon error"><span class="material-symbols-outlined">warning</span></div>
+            <span class="kpi-badge-text error-text">{{ s.trafficAlert }}</span>
+          </div>
+          <p class="kpi-label">Pending Tickets</p>
+          <h3 class="kpi-value">{{ s.pendingTickets }} Queued</h3>
+        </div>
       </div>
     }
-    <div class="counter-card card add">+ Add New Counter</div>
-  </div>
+
+    <!-- Counter Cards Grid -->
+    <div class="counters-grid">
+      @for (c of counters(); track c.id) {
+        <div class="counter-card" [class.grayscale]="c.isOffline">
+          <div class="counter-header-bar" [ngClass]="headerColor(c.status)"></div>
+          <div class="counter-body">
+            <div class="counter-top">
+              <div>
+                <h3 class="counter-name">Counter {{ c.counterNo }}</h3>
+                <p class="counter-unit">{{ c.unitName }}</p>
+              </div>
+              <span class="status-tag" [ngClass]="statusClass(c.status)">
+                <span class="status-pulse" *ngIf="!c.isOffline"></span>
+                {{ statusLabel(c.status) }}
+              </span>
+            </div>
+
+            @if (c.isOffline) {
+              <!-- Offline State -->
+              <div class="offline-box">
+                <span class="material-symbols-outlined offline-icon">report_off</span>
+                <p class="offline-title">{{ c.offlineMessage ?? 'Counter Offline' }}</p>
+                <p class="offline-sub">Last active recently</p>
+              </div>
+              <button class="btn-full-outline" type="button">View Logs</button>
+            } @else if (!c.staffName) {
+              <!-- No Staff State -->
+              <div class="no-staff-box">
+                <div class="no-staff-avatar"><span class="material-symbols-outlined">person_add</span></div>
+                <div>
+                  <p class="no-staff-label">No Staff Assigned</p>
+                  <p class="no-staff-sub">Click to assign</p>
+                </div>
+                <button class="btn-assign-black" type="button">ASSIGN</button>
+              </div>
+              <div class="stat-row">
+                <div class="stat-box">
+                  <p class="stat-label">Today's Volume</p>
+                  <p class="stat-val">{{ c.todayVolume }}</p>
+                </div>
+                <div class="stat-box">
+                  <p class="stat-label">Feedback</p>
+                  <div class="fb-row">
+                    <span class="material-symbols-outlined fb-star">star</span>
+                    <p class="stat-val">{{ c.feedbackScore }}</p>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <!-- Active Staff State -->
+              <div class="staff-block">
+                <div class="staff-avatar-wrap">
+                  <div class="staff-avatar">{{ initials(c.staffName) }}</div>
+                  <span class="online-dot"></span>
+                </div>
+                <div class="staff-info">
+                  <p class="staff-name">{{ c.staffName }}</p>
+                  <p class="staff-role">{{ c.staffRole ?? 'Staff' }}</p>
+                </div>
+                <button class="swap-btn" type="button">
+                  <span class="material-symbols-outlined">swap_horiz</span>
+                </button>
+              </div>
+
+              <div class="ticket-section">
+                <div class="ticket-row">
+                  <span class="ticket-label">Current Ticket</span>
+                  <strong class="ticket-no">{{ c.currentTicket ?? '--' }}</strong>
+                </div>
+                <div class="progress-bar-outer">
+                  <div class="progress-bar-inner" [style.width.%]="c.progressPercent"></div>
+                </div>
+                <div class="ticket-row">
+                  <span class="ticket-label">Wait Time</span>
+                  <span class="ticket-val">{{ c.waitTimeLabel }} / {{ c.waitLimitLabel ?? '--' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <button class="add-counter-card" type="button" (click)="openCreate()">
+        <div class="add-icon-wrap">
+          <span class="material-symbols-outlined add-icon">add_circle</span>
+        </div>
+        <p class="add-title">Add New Counter</p>
+        <p class="add-sub">Configure a new physical or virtual service point</p>
+      </button>
+    </div>
+
+  }
 </div>
+
+<app-counter-form-modal
+  [open]="modalOpen()"
+  [editItem]="editItem()"
+  [saving]="saving()"
+  [error]="modalError()"
+  (saved)="save($event)"
+  (closed)="modalOpen.set(false)" />

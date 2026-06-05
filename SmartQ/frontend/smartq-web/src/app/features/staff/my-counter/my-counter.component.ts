@@ -62,11 +62,8 @@ export class MyCounterComponent implements OnInit, OnDestroy {
   load(): void {
     this.loading.set(true);
     this.error.set('');
-    const counterId = this.state.counterId();
-    const staffId = this.state.context()?.staff?.id;
-
-    this.api.getMyCounter(counterId, staffId).pipe(
-      catchError(() => this.loadMyCounterFallback(counterId, staffId))
+    this.api.getMyCounter().pipe(
+      catchError(() => this.loadMyCounterFallback())
     ).subscribe({
       next: (res) => this.applyMyCounter(res),
       error: () => {
@@ -85,13 +82,13 @@ export class MyCounterComponent implements OnInit, OnDestroy {
   }
 
   /** Uses existing staff-console endpoints when /my-counter is not yet deployed. */
-  private loadMyCounterFallback(counterId: number, staffUserId?: number) {
+  private loadMyCounterFallback() {
     return forkJoin({
-      context: this.api.getContext(counterId),
-      summary: this.api.getSummary(counterId),
-      activeSession: this.api.getActiveSession(counterId),
-      queue: this.api.getQueue(counterId, 'my-services'),
-      performance: this.api.getPerformance(counterId, staffUserId, 'today')
+      context: this.api.getContext(),
+      summary: this.api.getSummary(),
+      activeSession: this.api.getActiveSession(),
+      queue: this.api.getQueue('my-services'),
+      performance: this.api.getPerformance('today')
     }).pipe(
       switchMap((parts) => {
         const tokenId = parts.activeSession?.tokenId;
@@ -217,7 +214,7 @@ export class MyCounterComponent implements OnInit, OnDestroy {
   setCounterStatus(status: 'AVAILABLE' | 'BUSY' | 'BREAK' | 'OFFLINE'): void {
     if (this.busy()) return;
     this.busy.set(true);
-    this.api.updateCounterStatus(this.state.counterId(), { status }).subscribe({
+    this.api.updateCounterStatus({ status }).subscribe({
       next: (res) => {
         void this.popup(res.success ? 'Status Updated' : 'Status Not Updated', res.message, res.success ? 'success' : 'info');
         this.load();
@@ -242,7 +239,7 @@ export class MyCounterComponent implements OnInit, OnDestroy {
     const tokenId = this.data()?.activeSession?.tokenId;
     if (!tokenId || this.busy()) return;
     this.busy.set(true);
-    this.api.complete(tokenId, this.state.counterId()).subscribe({
+    this.api.complete(tokenId).subscribe({
       next: (res) => {
         void this.popup(res.success ? 'Service Completed' : 'Not Completed', res.message, res.success ? 'success' : 'info');
         this.load();
@@ -260,7 +257,7 @@ export class MyCounterComponent implements OnInit, OnDestroy {
     const tokenId = this.data()?.activeSession?.tokenId;
     if (!tokenId || this.busy()) return;
     this.busy.set(true);
-    this.api.noShow(tokenId, this.state.counterId()).subscribe({
+    this.api.noShow(tokenId).subscribe({
       next: (res) => {
         void this.popup(res.success ? 'Marked as No Show' : 'No Show Not Applied', res.message, res.success ? 'warning' : 'info');
         this.load();
@@ -327,7 +324,7 @@ export class MyCounterComponent implements OnInit, OnDestroy {
           return;
         }
 
-        this.api.transfer(tokenId, this.state.counterId(), result.value).subscribe({
+        this.api.transfer(tokenId, result.value).subscribe({
           next: (res) => {
             void this.popup(res.success ? 'Token Transferred' : 'Transfer Not Applied', res.message, res.success ? 'success' : 'info');
             this.load();

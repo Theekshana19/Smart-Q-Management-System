@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SmartQ.Application.DTOs;
 using SmartQ.Application.Interfaces;
 
@@ -22,6 +23,10 @@ public class TokensController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("IX_Tokens_TokenNo") == true)
+        {
+            return Conflict(new { message = "Token number already exists. Please try again." });
         }
     }
 

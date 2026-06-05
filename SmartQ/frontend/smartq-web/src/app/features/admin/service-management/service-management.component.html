@@ -1,37 +1,98 @@
-<div class="page">
+<div class="admin-page">
   <div class="page-head">
     <div>
-      <h1>Service Management</h1>
-      <p>Configure and monitor your active service touchpoints and operational flow.</p>
+      <h2 class="page-title">Service Settings</h2>
+      <p class="page-subtitle">Configure and monitor all service lines and queue routing logic.</p>
     </div>
-    <button class="btn-primary">+ Add New Service</button>
+    <button class="btn-primary-action" type="button" (click)="openCreate()">
+      <span class="material-symbols-outlined">add</span> Add New Service
+    </button>
   </div>
 
+  <app-admin-error-banner
+    [message]="errorMsg()"
+    [status]="errorStatus()"
+    (retry)="load()" />
+
   @if (summary(); as s) {
-    <div class="kpi-grid">
-      <div class="kpi card"><span>Total Services</span><strong>{{ s.totalServices }}</strong></div>
-      <div class="kpi card"><span>Active Now</span><strong>{{ s.activeNow }}</strong></div>
-      <div class="kpi card"><span>Total Tokens (Today)</span><strong>{{ s.totalTokensToday }}</strong></div>
+    <div class="kpi-row">
+      <div class="kpi-card"><p class="kpi-label">Total Services</p><h3 class="kpi-value">{{ s.totalServices }}</h3></div>
+      <div class="kpi-card"><p class="kpi-label">Active Now</p><h3 class="kpi-value">{{ s.activeNow }}</h3></div>
+      <div class="kpi-card"><p class="kpi-label">Tokens Today</p><h3 class="kpi-value">{{ s.totalTokensToday }}</h3></div>
+      <div class="kpi-card"><p class="kpi-label">Avg Wait Time</p><h3 class="kpi-value">{{ s.avgWaitMinutes | number:'1.1-1' }}m</h3></div>
     </div>
   }
 
-  <div class="table-card card">
-    <h2>Service Touchpoints</h2>
-    <table>
-      <thead>
-        <tr><th>SERVICE DETAIL</th><th>DEPARTMENT</th><th>STATUS</th><th>DAILY VOLUME</th><th>WAIT TIME</th></tr>
-      </thead>
-      <tbody>
-        @for (row of services(); track row['id']) {
+  <div class="table-card">
+    <div class="table-header">
+      <div class="tab-pills">
+        <button type="button" class="tab-pill" [class.active]="activeTab() === 'all'" (click)="setTab('all')">All Services</button>
+        <button type="button" class="tab-pill" [class.active]="activeTab() === 'active'" (click)="setTab('active')">Active Only</button>
+        <button type="button" class="tab-pill" [class.active]="activeTab() === 'maintenance'" (click)="setTab('maintenance')">Inactive</button>
+      </div>
+      <div class="search-wrap">
+        <span class="material-symbols-outlined s-icon">search</span>
+        <input class="search-input" placeholder="Search services…" (input)="setSearch($event)" (keyup.enter)="load()" />
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="table-loading">Loading services…</div>
+    } @else {
+      <table class="service-table">
+        <thead>
           <tr>
-            <td><strong>{{ row['name'] }}</strong><br><small>{{ row['description'] }}</small></td>
-            <td>{{ row['department'] }}</td>
-            <td><span class="status" [class.off]="row['status'] !== 'Operational'">{{ row['status'] }}</span></td>
-            <td>{{ row['dailyVolume'] }} Users</td>
-            <td>{{ row['avgWaitTime'] }}</td>
+            <th>Service</th><th>Code</th><th>Status</th><th>Sub-Services</th>
+            <th>Counters</th><th>Tokens Today</th><th>Avg Wait</th><th>Actions</th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (svc of filteredServices(); track svc.id) {
+            <tr>
+              <td>
+                <div class="service-cell">
+                  <div class="service-icon-wrap"><span class="material-symbols-outlined">{{ svc.icon || 'miscellaneous_services' }}</span></div>
+                  <div><p class="service-name">{{ svc.name }}</p><p class="service-desc">{{ svc.description }}</p></div>
+                </div>
+              </td>
+              <td class="mono">{{ svc.code }}</td>
+              <td><span class="status-badge" [class.active]="svc.isActive" [class.inactive]="!svc.isActive">{{ svc.isActive ? 'Active' : 'Inactive' }}</span></td>
+              <td><a [routerLink]="['/admin/sub-services']" [queryParams]="{ serviceId: svc.id }">{{ svc.subServiceCount }}</a></td>
+              <td>{{ svc.assignedCounterCount }}</td>
+              <td>{{ svc.tokensToday }}</td>
+              <td>{{ formatWait(svc.averageWaitMinutes) }}</td>
+              <td>
+                <div class="action-row">
+                  <button type="button" class="icon-btn" title="Edit" (click)="openEdit(svc)"><span class="material-symbols-outlined">edit</span></button>
+                  <button type="button" class="icon-btn" [title]="svc.isActive ? 'Disable' : 'Enable'" (click)="toggleStatus(svc)">
+                    <span class="material-symbols-outlined">{{ svc.isActive ? 'toggle_on' : 'toggle_off' }}</span>
+                  </button>
+                  <button type="button" class="icon-btn" title="Delete" (click)="confirmDelete(svc)"><span class="material-symbols-outlined">delete</span></button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (filteredServices().length === 0 && !errorMsg()) {
+        <div class="empty-table"><span class="material-symbols-outlined">search_off</span><p>No services found.</p></div>
+      }
+    }
   </div>
 </div>
+
+<app-service-form-modal
+  [open]="modalOpen()"
+  [editItem]="editItem()"
+  [saving]="saving()"
+  [error]="modalError()"
+  (saved)="saveService($event)"
+  (closed)="closeModal()" />
+
+<app-confirm-dialog
+  [open]="confirmOpen()"
+  title="Delete Service"
+  message="This will deactivate the service if it has tokens or sub-services, or remove it if empty."
+  confirmLabel="Delete"
+  (confirm)="doDelete()"
+  (cancel)="confirmOpen.set(false)" />

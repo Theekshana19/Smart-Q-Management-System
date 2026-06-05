@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { StaffNotificationResponse } from '../../../../core/models/staff-console.models';
+import { StaffStateService } from '../../services/staff-state.service';
 
 @Component({
   selector: 'app-notification-panel',
@@ -10,6 +11,7 @@ import { StaffNotificationResponse } from '../../../../core/models/staff-console
   styleUrl: './notification-panel.component.scss'
 })
 export class NotificationPanelComponent {
+  readonly state = inject(StaffStateService);
   @Input() notifications: StaffNotificationResponse | null = null;
   @Output() close = new EventEmitter<void>();
 

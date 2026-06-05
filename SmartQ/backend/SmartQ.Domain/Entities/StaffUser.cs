@@ -14,4 +14,5 @@ public class StaffUser : BaseEntity
     public bool IsActive { get; set; }
 
     public Counter? Counter { get; set; }
+    public ICollection<StaffCounterSession> CounterSessions { get; set; } = new List<StaffCounterSession>();
 }

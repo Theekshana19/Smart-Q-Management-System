@@ -3,7 +3,7 @@
   <header class="kiosk-header">
     <div class="brand">
       <span class="material-symbols-outlined logo-icon">layers</span>
-      <span class="brand-text">SmartQ Sri Lanka</span>
+      <span class="brand-text">{{ brandName() }}</span>
     </div>
     <div class="clock">
       <span class="material-symbols-outlined">schedule</span>
@@ -18,7 +18,7 @@
         <p class="subtitle">{{ currentSlide().subtitle }}</p>
       </div>
       <div class="lang-dots" aria-hidden="true">
-        @for (slide of welcomeSlides; track slide.code; let i = $index) {
+        @for (slide of welcomeSlides(); track slide.code; let i = $index) {
           <span class="dot" [class.active]="slideIndex() === i"></span>
         }
       </div>

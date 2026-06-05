@@ -1,30 +1,100 @@
-<div class="admin-layout">
-  <aside class="sidebar">
+<div class="admin-shell">
+  <aside class="admin-sidebar">
     <div class="brand">
-      <strong>SmartQ</strong>
-      <small>ENTERPRISE SUITE</small>
+      <h1 class="brand-title">SmartQ</h1>
+      <p class="brand-sub">Enterprise Suite</p>
     </div>
-    <nav>
-      <a routerLink="/admin/dashboard" routerLinkActive="active">Dashboard</a>
-      <a routerLink="/staff/console">Queue Management</a>
-      <a routerLink="/admin/counters" routerLinkActive="active">Staff Directory</a>
-      <a routerLink="/admin/services" routerLinkActive="active">Service Settings</a>
-      <a routerLink="/admin/reports" routerLinkActive="active">Live Analytics</a>
+
+    <nav class="admin-nav">
+      <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">dashboard</span>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/admin/counters" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">desktop_windows</span>
+        <span>Counters</span>
+      </a>
+      <a routerLink="/admin/counter-assignments" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">link</span>
+        <span>Assignments</span>
+      </a>
+      <a routerLink="/admin/services" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">settings_suggest</span>
+        <span>Service Settings</span>
+      </a>
+      <a routerLink="/admin/sub-services" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">layers</span>
+        <span>Sub-Services</span>
+      </a>
+      <a routerLink="/admin/staff" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">groups</span>
+        <span>Staff Directory</span>
+      </a>
+      <a routerLink="/admin/languages" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">translate</span>
+        <span>Languages</span>
+      </a>
+      <a routerLink="/admin/settings" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">tune</span>
+        <span>System Settings</span>
+      </a>
+      <a routerLink="/admin/display-messages" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">chat</span>
+        <span>Display Messages</span>
+      </a>
+      <a routerLink="/admin/voice-templates" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">record_voice_over</span>
+        <span>Voice Templates</span>
+      </a>
+      <a routerLink="/admin/reports" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">analytics</span>
+        <span>Live Analytics</span>
+      </a>
     </nav>
-    <div class="bottom">
-      <a>Staff Profile</a>
-      <a class="sign-out">Sign Out</a>
+
+    <div class="sidebar-bottom">
+      <button type="button" class="nav-link sign-out" (click)="logout()">
+        <span class="material-symbols-outlined">logout</span>
+        <span>Sign Out</span>
+      </button>
     </div>
   </aside>
-  <div class="content">
-    <header class="admin-header">
-      <input placeholder="Search analytics or staff..." />
-      <div class="icons">
-        <span class="material-symbols-outlined">notifications</span>
-        <span class="material-symbols-outlined">settings</span>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <div class="search-wrap">
+        <span class="material-symbols-outlined search-icon">search</span>
+        <input type="text" placeholder="Search analytics or staff..." class="search-input" />
       </div>
-      <div class="user"><strong>Alex Chen</strong><small>Admin Level 4</small></div>
+
+      <div class="topbar-right">
+        <div class="icon-group">
+          <button type="button" class="icon-btn" aria-label="Notifications">
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+          <button type="button" class="icon-btn" aria-label="Settings">
+            <span class="material-symbols-outlined">settings</span>
+          </button>
+          <button type="button" class="icon-btn" aria-label="System">
+            <span class="material-symbols-outlined">dns</span>
+          </button>
+        </div>
+        <div class="divider"></div>
+        <div class="user-block">
+          <img
+            class="avatar"
+            [src]="'https://ui-avatars.com/api/?name=' + profile().fullName.replace(' ', '+') + '&background=006a66&color=fff'"
+            alt="Administrator" />
+          <div class="user-text">
+            <span class="user-name">{{ profile().fullName }}</span>
+            <span class="user-role">{{ profile().role }}</span>
+          </div>
+        </div>
+      </div>
     </header>
-    <router-outlet />
+
+    <main class="admin-content">
+      <router-outlet />
+    </main>
   </div>
 </div>

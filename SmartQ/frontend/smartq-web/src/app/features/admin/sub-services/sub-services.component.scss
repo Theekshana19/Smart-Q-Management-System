@@ -1,0 +1,17 @@
+@import '../service-management/service-management.component.scss';
+
+.filters-card {
+  display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;
+  background: #fff; border-radius: 12px; padding: 16px 20px; border: 1px solid #f1f5f9; margin-bottom: 16px;
+  label { font-size: 12px; font-weight: 600; color: #45464d; display: flex; flex-direction: column; gap: 4px; }
+  select, input { padding: 8px 12px; border: 1px solid #c6c6cd; border-radius: 8px; font-size: 14px; min-width: 160px; }
+}
+.btn-apply { padding: 8px 20px; border-radius: 8px; background: #000; color: #fff; border: none; font-weight: 600; cursor: pointer; height: 38px; }
+.data-table { width: 100%; border-collapse: collapse; th, td { padding: 12px 20px; text-align: left; font-size: 14px; }
+  th { font-size: 11px; text-transform: uppercase; color: #76777d; background: #f8f9ff; }
+  tr { border-bottom: 1px solid #f1f5f9; } }
+.mono { font-family: monospace; }
+.prefix { font-weight: 700; color: #006a66; }
+.badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; background: #e5eeff; &.on { background: #81f2eb; color: #006f6a; } }
+.icon-btn { border: none; background: transparent; cursor: pointer; color: #45464d; padding: 4px; }
+.empty, .table-loading { padding: 32px; text-align: center; color: #45464d; }

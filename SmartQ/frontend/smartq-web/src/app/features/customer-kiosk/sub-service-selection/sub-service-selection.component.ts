@@ -1,10 +1,12 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { ServiceApiService } from '../../../core/api/service-api.service';
 import { TokenApiService } from '../../../core/api/token-api.service';
 import { KioskStateService } from '../../../core/services/kiosk-state.service';
 import { KioskI18nService, KioskLabels } from '../../../core/services/kiosk-i18n.service';
+import { PublicConfigService } from '../../../core/services/public-config.service';
 import { SubServiceItem, KioskStatus } from '../../../core/models';
 
 @Component({
@@ -20,6 +22,7 @@ export class SubServiceSelectionComponent implements OnInit {
   private readonly tokenApi = inject(TokenApiService);
   private readonly kioskState = inject(KioskStateService);
   private readonly i18n = inject(KioskI18nService);
+  private readonly publicConfig = inject(PublicConfigService);
 
   readonly subServices = signal<SubServiceItem[]>([]);
   readonly kioskStatus = signal<KioskStatus | null>(null);
@@ -38,15 +41,27 @@ export class SubServiceSelectionComponent implements OnInit {
     const lang = this.kioskState.selectedLanguage();
     if (!lang) { this.router.navigate(['/customer/language']); return; }
     this.langCode = lang.code;
-    this.labels = this.i18n.labels(this.langCode);
     this.serviceId = Number(this.route.snapshot.paramMap.get('serviceId'));
     this.serviceName = this.kioskState.selectedServiceName() || '';
-    this.pageTitle = this.i18n.format(this.labels.selectSubTitle, { service: this.serviceName });
-    this.serviceApi.getSubServices(this.serviceId, this.langCode).subscribe({
-      next: s => { this.subServices.set(s); this.loading.set(false); },
-      error: () => { this.error.set(this.labels.loadError); this.loading.set(false); }
+
+    forkJoin({
+      messages: this.publicConfig.ensureMessages(this.langCode),
+      subServices: this.serviceApi.getSubServices(this.serviceId, this.langCode),
+      status: this.serviceApi.getKioskStatus()
+    }).subscribe({
+      next: ({ subServices, status }) => {
+        this.labels = this.i18n.labels(this.langCode, (k, fb) => this.publicConfig.getMessage(k, fb));
+        this.pageTitle = this.i18n.format(this.labels.selectSubTitle, { service: this.serviceName });
+        this.subServices.set(subServices);
+        this.kioskStatus.set(status);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.labels = this.i18n.labels(this.langCode);
+        this.error.set(this.labels.loadError);
+        this.loading.set(false);
+      }
     });
-    this.serviceApi.getKioskStatus().subscribe(s => this.kioskStatus.set(s));
   }
 
   selectSub(sub: SubServiceItem): void {

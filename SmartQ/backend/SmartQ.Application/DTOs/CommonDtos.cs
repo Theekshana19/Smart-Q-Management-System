@@ -127,7 +127,18 @@ public record StaffTokenHistoryItemDto(
     string Status);
 
 public record HourlyServedPointDto(string HourLabel, int ServedCount);
-public record StaffTimelineItemDto(string Title, string Description, DateTime Timestamp);
+
+public record HourlyTrafficPointDto(string HourLabel, int CashCount, int AccountCount, int LoanCount);
+
+public record StaffTimelineItemDto(
+    string EventType,
+    string TokenNo,
+    string Title,
+    string Description,
+    string? MetricLabel,
+    string? MetricValue,
+    DateTime Timestamp);
+
 public record StaffPerformanceDto(
     int ServedToday,
     string AvgServiceTime,
@@ -135,12 +146,32 @@ public record StaffPerformanceDto(
     decimal CompletionRate,
     IReadOnlyList<HourlyServedPointDto> HourlyServed,
     IReadOnlyList<StaffTimelineItemDto> RecentTimeline,
-    string OptimizationTip);
+    string OptimizationTip,
+    string StaffName,
+    string ReportDateLabel,
+    string RangeLabel,
+    string ServedLabel,
+    int DailyTarget,
+    decimal ServedProgressPercent,
+    string ServedTrendLabel,
+    string AvgServiceTimeTrendLabel,
+    decimal AvgServiceProgressPercent,
+    string AvgServiceHint,
+    string CompletionTrendLabel,
+    decimal CompletionProgressPercent,
+    string CompletionHint,
+    IReadOnlyList<HourlyTrafficPointDto> HourlyTraffic);
 
 public record StaffNotificationItemDto(string Type, string Title, string Description, DateTime CreatedAt, bool IsNew);
 public record StaffNotificationResponseDto(int NewCount, IReadOnlyList<StaffNotificationItemDto> Items);
 
-public record TokenJourneyItemDto(string NewStatus, DateTime ChangedAt, string? Remarks);
+public record TokenJourneyItemDto(
+    string NewStatus,
+    DateTime ChangedAt,
+    string? Remarks,
+    string Title,
+    string Subtitle);
+
 public record StaffTokenDetailsDto(
     int TokenId,
     string TokenNo,
@@ -153,6 +184,7 @@ public record StaffTokenDetailsDto(
     int WaitingMinutes,
     int QueuePosition,
     string? CustomerName,
+    string? CustomerSubtitle,
     IReadOnlyList<TokenJourneyItemDto> Journey);
 
 public record StaffTransferOptionDto(int Id, string Code, string Name);

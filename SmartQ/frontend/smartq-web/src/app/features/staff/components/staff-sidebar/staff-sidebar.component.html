@@ -1,14 +1,14 @@
 <aside class="sidebar">
   <div class="brand">
-    <h1>Global Finance</h1>
+    <h1>SmartQ</h1>
     <p>Staff Console</p>
   </div>
 
-  <div class="profile" *ngIf="state.context()?.staff as staff">
-    <div class="avatar">{{ initials(staff.fullName) }}</div>
+  <div class="profile">
+    <div class="avatar">{{ initials(displayName()) }}</div>
     <div>
-      <p class="name">{{ staff.fullName }}</p>
-      <p class="role" *ngIf="state.context()?.counter as c">Counter {{ c.counterNo }}</p>
+      <p class="name">{{ displayName() }}</p>
+      <p class="role">{{ counterLabel() }}</p>
     </div>
   </div>
 
@@ -36,9 +36,7 @@
   </nav>
 
   <div class="bottom">
-    <button type="button"><span class="material-symbols-outlined">settings</span> Settings</button>
-    <button type="button"><span class="material-symbols-outlined">help</span> Help</button>
-    <button type="button" class="signout">
+    <button type="button" class="signout" (click)="logout()">
       <span class="material-symbols-outlined">logout</span>
       Sign Out
     </button>

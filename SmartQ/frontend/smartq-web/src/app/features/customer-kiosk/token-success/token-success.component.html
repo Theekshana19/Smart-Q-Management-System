@@ -44,7 +44,9 @@
     </div>
 
     <div class="actions no-print">
-      <button class="btn-primary" (click)="print()"><span class="material-symbols-outlined">print</span> {{ labels.printToken }}</button>
+      @if (printEnabled()) {
+        <button class="btn-primary" (click)="print()"><span class="material-symbols-outlined">print</span> {{ labels.printToken }}</button>
+      }
       <button class="btn-outline" (click)="finish()"><span class="material-symbols-outlined">check_circle</span> {{ labels.finish }}</button>
     </div>
   </div>

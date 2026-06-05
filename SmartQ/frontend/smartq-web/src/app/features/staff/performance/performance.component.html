@@ -1,0 +1,197 @@
+<div class="performance-page print-area">
+  @if (loading()) {
+    <div class="loading-state">Loading performance analytics…</div>
+  } @else if (error()) {
+    <div class="error-state">{{ error() }}</div>
+  } @else if (data(); as p) {
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">Performance Analytics</h2>
+        <p class="page-subtitle">
+          Real-time efficiency metrics for {{ p.staffName }} • {{ p.reportDateLabel }}
+        </p>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn-filter" (click)="toggleRange()">
+          <span class="material-symbols-outlined">calendar_today</span>
+          {{ range() === 'week' ? 'This Week' : 'Today' }}
+        </button>
+        <button type="button" class="btn-export-secondary" (click)="exportPdf()">
+          <span class="material-symbols-outlined">picture_as_pdf</span>
+          Export PDF
+        </button>
+        <button type="button" class="btn-export-secondary btn-view" (click)="viewPdf()">
+          <span class="material-symbols-outlined">visibility</span>
+          View PDF
+        </button>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <article class="glass-card kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon">
+            <span class="material-symbols-outlined filled">groups</span>
+          </div>
+          <span class="kpi-trend positive">
+            <span class="material-symbols-outlined">trending_up</span>
+            {{ p.servedTrendLabel }}
+          </span>
+        </div>
+        <div class="kpi-body">
+          <h3 class="kpi-label">{{ p.servedLabel }}</h3>
+          <p class="kpi-value">{{ p.servedToday }}</p>
+          <div class="progress-track">
+            <div class="progress-fill secondary" [style.width.%]="p.servedProgressPercent"></div>
+          </div>
+          <p class="kpi-hint">Daily target: {{ p.dailyTarget }} customers</p>
+        </div>
+      </article>
+
+      <article class="glass-card kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon">
+            <span class="material-symbols-outlined filled">timer</span>
+          </div>
+          <span class="kpi-trend positive">
+            <span class="material-symbols-outlined">expand_more</span>
+            {{ p.avgServiceTimeTrendLabel }}
+          </span>
+        </div>
+        <div class="kpi-body">
+          <h3 class="kpi-label">Avg Service Time</h3>
+          <p class="kpi-value">{{ p.avgServiceTime }}</p>
+          <div class="progress-track">
+            <div class="progress-fill primary" [style.width.%]="p.avgServiceProgressPercent"></div>
+          </div>
+          <p class="kpi-hint">{{ p.avgServiceHint }}</p>
+        </div>
+      </article>
+
+      <article class="glass-card kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon">
+            <span class="material-symbols-outlined filled">check_circle</span>
+          </div>
+          <span class="kpi-trend positive">{{ p.completionTrendLabel }}</span>
+        </div>
+        <div class="kpi-body">
+          <h3 class="kpi-label">Completion Rate</h3>
+          <p class="kpi-value">{{ p.completionRate }}%</p>
+          <div class="progress-track">
+            <div class="progress-fill mint" [style.width.%]="p.completionProgressPercent"></div>
+          </div>
+          <p class="kpi-hint">{{ p.completionHint }}</p>
+        </div>
+      </article>
+    </div>
+
+    <div class="content-grid">
+      <section class="glass-card chart-card">
+        <div class="chart-header">
+          <div>
+            <h3 class="section-title">Hourly Traffic Distribution</h3>
+            <p class="section-subtitle">Volume of tokens served per hour</p>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-dot cash"></span>
+              <span>Cash</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot account"></span>
+              <span>Account</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot loan"></span>
+              <span>Loan</span>
+            </div>
+          </div>
+        </div>
+
+        @if (chartBars().length === 0) {
+          <div class="empty-chart">{{ state.msg('STAFF_PERF_CHART_EMPTY', 'No hourly traffic data for this period.') }}</div>
+        } @else if (!hasChartActivity()) {
+          <div class="empty-chart subtle">{{ state.msg('STAFF_PERF_CHART_NO_ACTIVITY', 'No served tokens yet today. Chart updates when tokens are called or completed.') }}</div>
+          <div class="chart-area muted-chart">
+            @for (bar of chartBars(); track bar.hourLabel) {
+              <div class="chart-column">
+                <div class="chart-stack">
+                  <div class="chart-segment placeholder" style="height: 4%"></div>
+                </div>
+                <span class="chart-hour">{{ bar.hourLabel }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="chart-area">
+            @for (bar of chartBars(); track bar.hourLabel) {
+              <div class="chart-column">
+                <div class="chart-stack">
+                  <div
+                    class="chart-segment cash"
+                    [style.height.%]="chartReady() ? bar.cashPct : 0"
+                  ></div>
+                  <div
+                    class="chart-segment account"
+                    [style.height.%]="chartReady() ? bar.accountPct : 0"
+                  ></div>
+                  <div
+                    class="chart-segment loan"
+                    [style.height.%]="chartReady() ? bar.loanPct : 0"
+                  ></div>
+                </div>
+                <span class="chart-hour">{{ bar.hourLabel }}</span>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="glass-card timeline-card">
+        <h3 class="section-title timeline-title">Live Timeline</h3>
+        @if (timeline().length === 0) {
+          <p class="empty-timeline">{{ state.msg('STAFF_PERF_TIMELINE_EMPTY', 'No counter activity for this period. Call or complete tokens in Queue Console to populate the timeline.') }}</p>
+        } @else {
+          <div class="timeline-list">
+            @for (item of timeline(); track item.tokenNo + item.timestamp; let last = $last) {
+              <div class="timeline-item">
+                <div class="timeline-rail">
+                  <div class="timeline-icon" [ngClass]="timelineIconClass(item.eventType)">
+                    <span class="material-symbols-outlined">{{ timelineIcon(item.eventType) }}</span>
+                  </div>
+                  @if (!last) {
+                    <div class="timeline-line"></div>
+                  }
+                </div>
+                <div class="timeline-content" [class.no-border]="last">
+                  <div class="timeline-head">
+                    <span class="timeline-title-text">{{ item.title }}</span>
+                    <span class="timeline-time">{{ timeAgo(item.timestamp) }}</span>
+                  </div>
+                  <p class="timeline-desc">{{ item.description }}</p>
+                  @if (item.metricLabel && item.metricValue) {
+                    <p class="timeline-metric" [class.muted]="item.eventType === 'SKIPPED'">
+                      {{ item.metricLabel }}: {{ item.metricValue }}
+                    </p>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    </div>
+
+    <section class="glass-card tip-card">
+      <div class="tip-icon">
+        <span class="material-symbols-outlined">lightbulb</span>
+      </div>
+      <div class="tip-body">
+        <h4 class="tip-title">Performance Optimization Tip</h4>
+        <p class="tip-text">{{ p.optimizationTip }}</p>
+      </div>
+      <button type="button" class="btn-training">View Training</button>
+    </section>
+  }
+</div>

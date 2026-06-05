@@ -20,87 +20,80 @@ public class TokenService : ITokenService
 
     public async Task<GenerateTokenResponse> GenerateTokenAsync(GenerateTokenRequest request, CancellationToken ct = default)
     {
-        await using var tx = await _db.Database.BeginTransactionAsync(ct);
-        try
+        const int maxAttempts = 3;
+
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
-            var language = await _db.Languages.FindAsync([request.LanguageId], ct)
-                ?? throw new InvalidOperationException("Language not found.");
-            var service = await _db.Services.FindAsync([request.ServiceId], ct)
-                ?? throw new InvalidOperationException("Service not found.");
-            var sub = await _db.SubServices.FindAsync([request.SubServiceId], ct)
-                ?? throw new InvalidOperationException("Sub-service not found.");
-
-            if (!sub.IsActive || !service.IsActive)
-                throw new InvalidOperationException("Service is not available.");
-
-            var today = DateTime.Today;
-            var sequence = await _db.DailyTokenSequences
-                .FirstOrDefaultAsync(d => d.SequenceDate == today && d.SubServiceId == sub.Id, ct);
-
-            if (sequence == null)
+            await using var tx = await _db.Database.BeginTransactionAsync(ct);
+            try
             {
-                sequence = new DailyTokenSequence
+                var language = await _db.Languages.FindAsync([request.LanguageId], ct)
+                    ?? throw new InvalidOperationException("Language not found.");
+                var service = await _db.Services.FindAsync([request.ServiceId], ct)
+                    ?? throw new InvalidOperationException("Service not found.");
+                var sub = await _db.SubServices.FindAsync([request.SubServiceId], ct)
+                    ?? throw new InvalidOperationException("Sub-service not found.");
+
+                if (!sub.IsActive || !service.IsActive)
+                    throw new InvalidOperationException("Service is not available.");
+
+                var sequenceDate = DateOnly.FromDateTime(DateTime.Today);
+                var (seqNo, tokenNo) = await TokenSequenceHelper.NextAsync(_db, sub.Id, sub.TokenPrefix, ct);
+
+                var waitingBefore = await _db.Tokens.CountAsync(
+                    t => t.SubServiceId == sub.Id && t.Status == TokenStatus.WAITING, ct);
+
+                var token = new Token
                 {
-                    SequenceDate = today,
-                    SubServiceId = sub.Id,
+                    TokenNo = tokenNo,
                     TokenPrefix = sub.TokenPrefix,
-                    LastNumber = 0,
-                    UpdatedAt = DateTime.Now
+                    SequenceNo = seqNo,
+                    SequenceDate = sequenceDate,
+                    LanguageId = language.Id,
+                    ServiceId = service.Id,
+                    SubServiceId = sub.Id,
+                    Status = TokenStatus.WAITING,
+                    Priority = TokenPriority.STANDARD,
+                    CreatedAt = DateTime.Now,
+                    QueuedAt = DateTime.Now,
+                    EstimatedWaitMinutes = sub.EstimatedServiceMinutes + waitingBefore * 2
                 };
-                _db.DailyTokenSequences.Add(sequence);
+                _db.Tokens.Add(token);
+                _db.TokenStatusHistories.Add(new TokenStatusHistory
+                {
+                    Token = token,
+                    OldStatus = null,
+                    NewStatus = TokenStatus.WAITING,
+                    ChangedAt = DateTime.Now,
+                    Remarks = "Token generated"
+                });
+                await _db.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
+
+                var (serviceName, subName) = await GetTranslatedNamesAsync(service.Id, sub.Id, language.Id, ct);
+                var response = new GenerateTokenResponse(
+                    token.Id, token.TokenNo, serviceName, subName,
+                    token.EstimatedWaitMinutes, waitingBefore, token.CreatedAt);
+
+                await _notify.TokenGeneratedAsync(response, ct);
+                await _notify.QueueUpdatedAsync(new { token.Id }, ct);
+                await _notify.DisplayUpdatedAsync(await BuildDisplayPayload(ct), ct);
+
+                return response;
             }
-
-            sequence.LastNumber++;
-            sequence.UpdatedAt = DateTime.Now;
-            var seqNo = sequence.LastNumber;
-            var tokenNo = $"{sub.TokenPrefix}-{seqNo:D3}";
-
-            var waitingBefore = await _db.Tokens.CountAsync(
-                t => t.SubServiceId == sub.Id && t.Status == TokenStatus.WAITING, ct);
-
-            var defaultWait = await GetSettingIntAsync("DEFAULT_ESTIMATED_WAIT_MINUTES", 8, ct);
-            var token = new Token
+            catch (DbUpdateException ex) when (attempt < maxAttempts && IsTokenNumberConflict(ex))
             {
-                TokenNo = tokenNo,
-                TokenPrefix = sub.TokenPrefix,
-                SequenceNo = seqNo,
-                LanguageId = language.Id,
-                ServiceId = service.Id,
-                SubServiceId = sub.Id,
-                Status = TokenStatus.WAITING,
-                Priority = TokenPriority.STANDARD,
-                CreatedAt = DateTime.Now,
-                QueuedAt = DateTime.Now,
-                EstimatedWaitMinutes = sub.EstimatedServiceMinutes + waitingBefore * 2
-            };
-            _db.Tokens.Add(token);
-            _db.TokenStatusHistories.Add(new TokenStatusHistory
+                await tx.RollbackAsync(ct);
+                _db.ChangeTracker.Clear();
+            }
+            catch
             {
-                Token = token,
-                OldStatus = null,
-                NewStatus = TokenStatus.WAITING,
-                ChangedAt = DateTime.Now,
-                Remarks = "Token generated"
-            });
-            await _db.SaveChangesAsync(ct);
-            await tx.CommitAsync(ct);
-
-            var (serviceName, subName) = await GetTranslatedNamesAsync(service.Id, sub.Id, language.Id, ct);
-            var response = new GenerateTokenResponse(
-                token.Id, token.TokenNo, serviceName, subName,
-                token.EstimatedWaitMinutes, waitingBefore, token.CreatedAt);
-
-            await _notify.TokenGeneratedAsync(response, ct);
-            await _notify.QueueUpdatedAsync(new { token.Id }, ct);
-            await _notify.DisplayUpdatedAsync(await BuildDisplayPayload(ct), ct);
-
-            return response;
+                await tx.RollbackAsync(ct);
+                throw;
+            }
         }
-        catch
-        {
-            await tx.RollbackAsync(ct);
-            throw;
-        }
+
+        throw new InvalidOperationException("Unable to generate a unique token number. Please try again.");
     }
 
     public async Task<TokenDetailDto?> GetTokenAsync(int id, CancellationToken ct = default)
@@ -261,5 +254,12 @@ public class TokenService : ITokenService
     {
         var display = new DisplayService(_db);
         return await display.GetDisplayBoardAsync(ct);
+    }
+
+    private static bool IsTokenNumberConflict(DbUpdateException ex)
+    {
+        var message = ex.InnerException?.Message ?? ex.Message;
+        return message.Contains("IX_Tokens_SubServiceId_SequenceDate_SequenceNo", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("IX_Tokens_TokenNo", StringComparison.OrdinalIgnoreCase);
     }
 }

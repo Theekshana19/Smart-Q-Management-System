@@ -1,0 +1,192 @@
+<div class="history-page print-area">
+  <div class="summary-grid">
+    <article class="summary-card">
+      <div>
+        <p class="summary-label">Served Today</p>
+        <h3 class="summary-value">{{ summary()?.servedToday ?? 0 }}</h3>
+      </div>
+      <div class="summary-icon primary">
+        <span class="material-symbols-outlined">group</span>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <div>
+        <p class="summary-label">Completed</p>
+        <h3 class="summary-value secondary">{{ summary()?.completedToday ?? 0 }}</h3>
+      </div>
+      <div class="summary-icon secondary">
+        <span class="material-symbols-outlined filled">check_circle</span>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <div>
+        <p class="summary-label">Skipped</p>
+        <h3 class="summary-value error">{{ summary()?.skippedToday ?? 0 }}</h3>
+      </div>
+      <div class="summary-icon error">
+        <span class="material-symbols-outlined">cancel</span>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <div>
+        <p class="summary-label">Avg Service Time</p>
+        <h3 class="summary-value">{{ summary()?.avgServiceTime ?? '--' }}</h3>
+      </div>
+      <div class="summary-icon primary">
+        <span class="material-symbols-outlined">timer</span>
+      </div>
+    </article>
+  </div>
+
+  <section class="table-card">
+    <div class="filters">
+      <div class="filter-group">
+        <div class="select-wrap">
+          <select [ngModel]="dateRange()" (ngModelChange)="onDateRangeChange($event)">
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="thisWeek">This Week</option>
+            <option value="last30days">Last 30 Days</option>
+            <option value="custom">Custom Period</option>
+          </select>
+          <span class="material-symbols-outlined select-icon">calendar_today</span>
+        </div>
+
+        <div class="date-period">
+          <div class="date-field">
+            <label for="period-from">From</label>
+            <input
+              id="period-from"
+              type="date"
+              [max]="periodTo()"
+              [ngModel]="periodFrom()"
+              (ngModelChange)="onPeriodFromChange($event)" />
+          </div>
+          <span class="date-separator">—</span>
+          <div class="date-field">
+            <label for="period-to">To</label>
+            <input
+              id="period-to"
+              type="date"
+              [min]="periodFrom()"
+              [max]="maxDate"
+              [ngModel]="periodTo()"
+              (ngModelChange)="onPeriodToChange($event)" />
+          </div>
+        </div>
+
+        <div class="select-wrap">
+          <select [ngModel]="serviceId()" (ngModelChange)="onServiceChange($event)">
+            <option [ngValue]="null">All Services</option>
+            <option *ngFor="let s of services()" [ngValue]="s.serviceId">{{ s.name }}</option>
+          </select>
+          <span class="material-symbols-outlined select-icon">account_balance</span>
+        </div>
+
+        <div class="select-wrap">
+          <select [ngModel]="status()" (ngModelChange)="onStatusChange($event)">
+            <option value="">All Status</option>
+            <option value="COMPLETED">COMPLETED</option>
+            <option value="SKIPPED">SKIPPED</option>
+            <option value="SERVING">SERVING</option>
+            <option value="CALLED">CALLED</option>
+          </select>
+          <span class="material-symbols-outlined select-icon">filter_list</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" (click)="exportPdf()" [disabled]="loading() || totalItems() === 0">
+          <span class="material-symbols-outlined">picture_as_pdf</span>
+          Export PDF
+        </button>
+        <button type="button" class="btn-secondary btn-view" (click)="viewPdf()" [disabled]="loading() || totalItems() === 0">
+          <span class="material-symbols-outlined">visibility</span>
+          View PDF
+        </button>
+        <button type="button" class="btn-primary" (click)="reload()" [disabled]="loading()">
+          <span class="material-symbols-outlined">refresh</span>
+          Reload Data
+        </button>
+      </div>
+    </div>
+
+    <div class="loading-row" *ngIf="loading()">Loading token history...</div>
+    <div class="error-row" *ngIf="!loading() && error()">{{ error() }}</div>
+
+    <div class="table-wrap" *ngIf="!loading() && !error()">
+      <table>
+        <thead>
+          <tr>
+            <th>Token No</th>
+            <th>Service Type</th>
+            <th>Called Time</th>
+            <th>Duration</th>
+            <th>Status</th>
+            <th class="right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="token-row"
+            *ngFor="let item of pagedItems()"
+            (click)="openDetails(item.tokenId)">
+            <td>
+              <span class="token-no">{{ item.tokenNo }}</span>
+            </td>
+            <td>
+              <div class="service-cell">
+                <span class="service-dot" [ngClass]="'dot-' + serviceDotIndex(item.serviceType)"></span>
+                <span>{{ item.serviceType }}</span>
+              </div>
+            </td>
+            <td class="muted">{{ formatCalledTime(item.calledTime) }}</td>
+            <td class="muted">{{ item.duration }}</td>
+            <td>
+              <span class="status-pill" [ngClass]="statusClass(item.status)">{{ item.status }}</span>
+            </td>
+            <td class="right">
+              <button type="button" class="icon-btn" (click)="openDetails(item.tokenId); $event.stopPropagation()">
+                <span class="material-symbols-outlined">visibility</span>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="pagedItems().length === 0">
+            <td colspan="6" class="empty">{{ state.msg('STAFF_TOKEN_HISTORY_EMPTY', 'No token history found for the selected filters.') }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination" *ngIf="!loading() && totalItems() > 0">
+      <p>Showing {{ rangeStart() }} to {{ rangeEnd() }} of {{ totalItems() }} entries</p>
+      <div class="pages">
+        <button type="button" class="page-btn" (click)="prevPage()" [disabled]="page() <= 1">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <button
+          type="button"
+          class="page-btn"
+          *ngFor="let p of pageNumbers()"
+          [class.active]="p === page()"
+          (click)="goToPage(p)">
+          {{ p }}
+        </button>
+        <button type="button" class="page-btn" (click)="nextPage()" [disabled]="page() >= totalPages()">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<app-token-details-drawer
+  [open]="drawerOpen()"
+  [loading]="detailsLoading()"
+  [details]="selectedDetails()"
+  [showActions]="false"
+  (closed)="closeDetails()"
+/>

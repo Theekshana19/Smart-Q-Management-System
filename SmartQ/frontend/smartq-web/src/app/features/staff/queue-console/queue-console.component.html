@@ -4,27 +4,6 @@
 </div>
 
 <main class="queue-page" *ngIf="!state.error() && state.summary() as s">
-  <section class="counter-test glass-card" *ngIf="counters().length > 0">
-    <div>
-      <h4>Testing Only: Queue Counter Switch</h4>
-      <p>Use this temporary dropdown to verify each counter sees only relevant tokens.</p>
-      <div class="assigned-services" *ngIf="state.context() as ctx">
-        <span class="label">Assigned services (from DB):</span>
-        <ng-container *ngIf="ctx.assignedServices.length > 0; else noneAssigned">
-          <span class="chip" *ngFor="let s of ctx.assignedServices">{{ s.code }} - {{ s.name }}</span>
-        </ng-container>
-        <ng-template #noneAssigned>
-          <span class="none">No active services assigned to this counter.</span>
-        </ng-template>
-      </div>
-    </div>
-    <select [value]="state.counterId()" (change)="onCounterChange($event)">
-      <option *ngFor="let c of counters()" [value]="c.id">
-        Counter {{ c.counterNo }} - {{ c.counterName }}
-      </option>
-    </select>
-  </section>
-
   <section class="summary-grid">
     <article class="glass-card mini">
       <div>
@@ -59,7 +38,7 @@
         <span class="session-pill">{{ active()?.status === 'SERVING' ? 'In Progress' : active()?.status }}</span>
       </header>
 
-      <div class="token-core">
+      <div class="token-core" (click)="active()?.tokenId && openDetails(active()!.tokenId)" role="button" tabindex="0">
         <span class="label">Token Number</span>
         <h1>{{ active()?.tokenNo }}</h1>
       </div>
@@ -119,7 +98,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let q of queue().slice(0, 8)">
+            <tr *ngFor="let q of queue().slice(0, 8)" class="queue-row" (click)="openDetails(q.tokenId)">
               <td>{{ q.tokenNo }}</td>
               <td>{{ q.subServiceName }}</td>
               <td>
@@ -133,3 +112,13 @@
     </aside>
   </section>
 </main>
+
+<app-token-details-drawer
+  [open]="drawerOpen()"
+  [loading]="detailsLoading()"
+  [details]="selectedDetails()"
+  (closed)="closeDetails()"
+  (recall)="onDrawerRecall($event)"
+  (transfer)="onDrawerTransfer($event)"
+  (cancel)="onDrawerCancel($event)"
+/>

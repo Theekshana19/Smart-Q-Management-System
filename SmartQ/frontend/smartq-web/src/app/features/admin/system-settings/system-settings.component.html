@@ -1,0 +1,67 @@
+<app-admin-error-banner *ngIf="errorMsg()" [message]="errorMsg()" [status]="errorStatus()" (retry)="load()" />
+
+<section class="page-header">
+  <div>
+    <h1>System Settings</h1>
+    <p>Manage runtime queue, kiosk, display, and staff configuration.</p>
+  </div>
+</section>
+
+<div class="toolbar">
+  <input type="search" placeholder="Search by key..." [ngModel]="search()" (ngModelChange)="search.set($event)" />
+  <select [ngModel]="dataType()" (ngModelChange)="dataType.set($event)">
+    <option value="">All Types</option>
+    <option value="STRING">STRING</option>
+    <option value="NUMBER">NUMBER</option>
+    <option value="BOOLEAN">BOOLEAN</option>
+    <option value="DECIMAL">DECIMAL</option>
+    <option value="JSON">JSON</option>
+  </select>
+</div>
+
+<p *ngIf="loading()">Loading settings...</p>
+
+<table *ngIf="!loading() && !errorMsg()">
+  <thead>
+    <tr><th>Setting Key</th><th>Value</th><th>Data Type</th><th>Description</th><th>Active</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let item of filtered()">
+      <td><code>{{ item.settingKey }}</code></td>
+      <td>{{ item.settingValue }}</td>
+      <td>{{ item.dataType }}</td>
+      <td>{{ item.description }}</td>
+      <td>{{ item.isActive ? 'Yes' : 'No' }}</td>
+      <td><button type="button" (click)="openEdit(item)">Edit</button></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="modal-backdrop" *ngIf="modalOpen() && editItem() as item">
+  <div class="modal">
+    <h2>Edit Setting</h2>
+    <p><strong>{{ item.settingKey }}</strong></p>
+    <p class="modal-error" *ngIf="modalError()">{{ modalError() }}</p>
+    <label *ngIf="isBoolean(item)">Value
+      <select [(ngModel)]="form.settingValue">
+        <option value="true">true</option>
+        <option value="false">false</option>
+      </select>
+    </label>
+    <label *ngIf="!isBoolean(item) && (item.dataType.toUpperCase() === 'NUMBER' || item.dataType.toUpperCase() === 'DECIMAL')">Value
+      <input type="number" step="any" [(ngModel)]="form.settingValue" />
+    </label>
+    <label *ngIf="!isBoolean(item) && item.dataType.toUpperCase() === 'JSON'">Value
+      <textarea rows="4" [(ngModel)]="form.settingValue"></textarea>
+    </label>
+    <label *ngIf="!isBoolean(item) && item.dataType.toUpperCase() !== 'NUMBER' && item.dataType.toUpperCase() !== 'DECIMAL' && item.dataType.toUpperCase() !== 'JSON'">Value
+      <input [(ngModel)]="form.settingValue" />
+    </label>
+    <label>Description <input [(ngModel)]="form.description" /></label>
+    <label><input type="checkbox" [(ngModel)]="form.isActive" /> Active</label>
+    <div class="modal-actions">
+      <button type="button" (click)="modalOpen.set(false)">Cancel</button>
+      <button type="button" class="primary" [disabled]="saving()" (click)="save()">Save</button>
+    </div>
+  </div>
+</div>

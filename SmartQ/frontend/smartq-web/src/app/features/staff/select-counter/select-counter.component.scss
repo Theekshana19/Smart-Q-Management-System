@@ -1,0 +1,115 @@
+.page {
+  min-height: 100vh;
+  background: #0b1c30;
+  color: #f9fafb;
+  padding: 2rem;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+header p {
+  color: #9ca3af;
+}
+
+.error {
+  margin-top: 1rem;
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.loading {
+  margin-top: 2rem;
+  color: #9ca3af;
+}
+
+.grid {
+  margin-top: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.card.disabled {
+  opacity: 0.65;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.head h2 {
+  margin: 0;
+}
+
+.head p {
+  margin: 0.25rem 0 0;
+  color: #9ca3af;
+}
+
+.status {
+  align-self: start;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #374151;
+  font-size: 0.75rem;
+}
+
+.status.available {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+}
+
+.label {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+}
+
+.services ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+}
+
+.prefixes {
+  display: block;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.occupied {
+  margin: 0;
+  color: #fbbf24;
+  font-size: 0.875rem;
+}
+
+button {
+  background: #006a66;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

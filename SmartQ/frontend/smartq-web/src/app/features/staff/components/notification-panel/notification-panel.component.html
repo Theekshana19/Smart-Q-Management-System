@@ -12,7 +12,7 @@
         <time>{{ n.createdAt | date:'shortTime' }}</time>
       </div>
     </article>
-    <p class="empty" *ngIf="!(notifications?.items?.length)">No notifications.</p>
+    <p class="empty" *ngIf="!(notifications?.items?.length)">{{ state.msg('STAFF_NOTIFICATIONS_EMPTY', 'No notifications.') }}</p>
   </div>
   <button type="button" class="footer" (click)="close.emit()">View All Activities</button>
 </div>

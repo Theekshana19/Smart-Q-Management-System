@@ -1,0 +1,87 @@
+<div class="admin-page">
+  <div class="page-head">
+    <div>
+      <h2 class="page-title">Sub-Service Management</h2>
+      <p class="page-subtitle">Manage token prefixes and sub-service lines under each main service.</p>
+    </div>
+    <button class="btn-primary-action" type="button" (click)="openCreate()">
+      <span class="material-symbols-outlined">add</span> Add New Sub-Service
+    </button>
+  </div>
+
+  <app-admin-error-banner [message]="errorMsg()" [status]="errorStatus()" (retry)="load()" />
+
+  <div class="filters-card">
+    <label>Parent Service
+      <select [(ngModel)]="filterServiceId" (change)="load()">
+        <option [ngValue]="undefined">All Services</option>
+        @for (s of services(); track s.id) { <option [ngValue]="s.id">{{ s.name }}</option> }
+      </select>
+    </label>
+    <label>Status
+      <select [(ngModel)]="filterActive" (change)="load()">
+        <option [ngValue]="undefined">All</option>
+        <option [ngValue]="true">Active</option>
+        <option [ngValue]="false">Inactive</option>
+      </select>
+    </label>
+    <label>Search
+      <input [(ngModel)]="searchTerm" placeholder="Search…" (keyup.enter)="load()" />
+    </label>
+    <button type="button" class="btn-apply" (click)="load()">Apply</button>
+  </div>
+
+  <div class="table-card">
+    @if (loading()) {
+      <div class="table-loading">Loading sub-services…</div>
+    } @else {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Sub-Service</th><th>Parent</th><th>Code</th><th>Token Prefix</th>
+            <th>Est. Min</th><th>Order</th><th>Tokens Today</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.id) {
+            <tr>
+              <td><strong>{{ item.name }}</strong></td>
+              <td>{{ item.serviceName }}</td>
+              <td class="mono">{{ item.code }}</td>
+              <td class="mono prefix">{{ item.tokenPrefix }}</td>
+              <td>{{ item.estimatedServiceMinutes }}m</td>
+              <td>{{ item.displayOrder }}</td>
+              <td>{{ item.tokensToday }}</td>
+              <td><span class="badge" [class.on]="item.isActive">{{ item.isActive ? 'Active' : 'Inactive' }}</span></td>
+              <td>
+                <button type="button" class="icon-btn" (click)="openEdit(item)"><span class="material-symbols-outlined">edit</span></button>
+                <button type="button" class="icon-btn" (click)="toggleStatus(item)"><span class="material-symbols-outlined">toggle_on</span></button>
+                <button type="button" class="icon-btn" (click)="confirmDelete(item)"><span class="material-symbols-outlined">delete</span></button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (items().length === 0 && !errorMsg()) {
+        <div class="empty">No sub-services found.</div>
+      }
+    }
+  </div>
+</div>
+
+<app-sub-service-form-modal
+  [open]="modalOpen()"
+  [editItem]="editItem()"
+  [services]="services()"
+  [defaultServiceId]="filterServiceId"
+  [saving]="saving()"
+  [error]="modalError()"
+  (saved)="save($event)"
+  (closed)="modalOpen.set(false)" />
+
+<app-confirm-dialog
+  [open]="confirmOpen()"
+  title="Delete Sub-Service"
+  message="Will deactivate if tokens exist, otherwise remove."
+  (confirm)="doDelete()"
+  (cancel)="confirmOpen.set(false)" />
